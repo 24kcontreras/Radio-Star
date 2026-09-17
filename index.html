@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RadioStar · 104.7 FM — La radio del Top 40</title>
+<meta name="description" content="RadioStar 104.7 FM: emisión en directo en audio y vídeo, el Top 40, programas y podcasts a la carta, locutores y noticias musicales.">
+<meta name="theme-color" content="#ec3013">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="RadioStar · 104.7 FM">
+<meta property="og:description" content="La radio del Top 40, en FM, online y en vídeo.">
+<meta property="og:image" content="assets/img/logo.png">
+<meta property="og:locale" content="es_ES">
+
+<link rel="icon" href="assets/img/logo.png">
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- El stream real se configura en data-stream (audio) y data-video (HLS/MP4). -->
+<audio id="rs-audio" preload="none" data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"></audio>
+
+<!-- ═══ Cabecera ═══════════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="#directo">
+      <img src="assets/img/logo.png" alt="RadioStar" width="207" height="56">
+    </a>
+
+    <nav class="nav-main" aria-label="Principal">
+      <a href="#top40">Top 40</a>
+      <a href="#programas">Programas</a>
+      <a href="#locutores">Locutores</a>
+      <a href="#noticias">Noticias</a>
+      <a href="#comunidad">Comunidad</a>
+    </nav>
+
+    <div class="header-actions">
+      <span class="freq-badge">104.7 FM</span>
+      <button type="button" class="btn btn-primary btn-start" data-action="play-here">
+        <span class="tri" aria-hidden="true"></span>
+        Escuchar
+      </button>
+    </div>
+  </div>
+
+  <nav class="nav-mobile" aria-label="Secciones">
+    <a href="#directo" class="is-active">Directo</a>
+    <a href="#top40">Top 40</a>
+    <a href="#programas">Programas</a>
+    <a href="#locutores">Locutores</a>
+    <a href="#noticias">Noticias</a>
+    <a href="#comunidad">Comunidad</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ═══ Directo ════════════════════════════════════════════════════════════ -->
+<section id="directo" class="section" aria-labelledby="directo-title">
+  <div class="live-grid">
+
+    <div class="live-main">
+      <div class="live-badge-row">
+        <span class="live-badge">
+          <span class="live-dot" aria-hidden="true"></span>
+          EN DIRECTO
+        </span>
+        <span class="live-elapsed">Emitiendo · <span data-bind="elapsed">0:00:00</span></span>
+      </div>
+
+      <div>
+        <div class="kicker">Ahora en RadioStar</div>
+        <h1 id="directo-title" class="live-title">PARTIENDO LA SEMANA</h1>
+        <div class="live-meta">con Tatán · Lunes a viernes, 07:00 – 09:10</div>
+      </div>
+
+      <hr class="hr" style="margin:2px 0">
+
+      <div class="player-row">
+        <button type="button" class="play-big" data-action="toggle" aria-label="Reproducir o pausar">
+          <span class="tri" data-when="paused" aria-hidden="true"></span>
+          <span class="pause-bars" data-when="playing" hidden aria-hidden="true"><span></span><span></span></span>
+        </button>
+
+        <div style="min-width:0;flex:1 1 200px">
+          <div class="eyebrow">Suena ahora</div>
+          <div class="now-title" data-bind="track-title">Self Control</div>
+          <div class="now-artist" data-bind="track-artist">Marea Nueva</div>
+        </div>
+
+        <div class="eq" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="vol">
+          <button type="button" class="btn btn-secondary btn-icon" data-action="mute" aria-label="Silenciar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>
+              <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+              <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+            </svg>
+          </button>
+          <div class="vol-blocks" role="group" aria-label="Volumen"></div>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-start" data-action="like" aria-pressed="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"></path>
+          </svg>
+          <span data-bind="like-label">Me gusta</span>
+        </button>
+
+        <button type="button" class="btn btn-secondary btn-start" data-action="share">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true">
+            <path d="M4 12v8h16v-8"></path><path d="M12 16V3"></path><path d="M7 8l5-5 5 5"></path>
+          </svg>
+          Compartir
+        </button>
+      </div>
+
+      <hr class="hr" style="margin:2px 0">
+
+      <div>
+        <div class="eyebrow" style="margin-bottom:8px">Ha sonado antes</div>
+        <ul class="recent-list" style="list-style:none;margin:0;padding:0">
+          <li><span class="recent-time">08:41</span><span class="recent-title">Onda corta</span><span class="recent-artist">Duo Litoral</span></li>
+          <li><span class="recent-time">08:36</span><span class="recent-title">Cuenta atrás</span><span class="recent-artist">Vera Molina</span></li>
+          <li><span class="recent-time">08:31</span><span class="recent-title">Neón de barrio</span><span class="recent-artist">Tres Azoteas</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Panel de señal: audio (carátula) o vídeo (estudio) -->
+    <div class="stage">
+      <div class="stage-head">
+        <span class="eyebrow">Señal</span>
+        <div class="seg">
+          <label class="seg-opt">
+            <input type="radio" name="rs-mode" value="audio" checked>
+            Audio
+          </label>
+          <label class="seg-opt">
+            <input type="radio" name="rs-mode" value="video">
+            Vídeo
+          </label>
+        </div>
+      </div>
+
+      <div data-mode-panel="video" hidden>
+        <div class="video-frame">
+          <div class="media grayscale" style="background:var(--color-neutral-800)"></div>
+          <div class="video-tags">
+            <span class="t-live">RADIOSTAR TV</span>
+            <span class="t-cam">CÁMARA 1 · ESTUDIO</span>
+          </div>
+          <div class="video-bar">
+            <button type="button" class="play-sm" data-action="toggle" aria-label="Reproducir o pausar vídeo">
+              <span class="tri" data-when="paused" aria-hidden="true"></span>
+              <span class="pause-bars" data-when="playing" hidden aria-hidden="true"><span></span><span></span></span>
+            </button>
+            <span class="v-label">En directo · <span data-bind="elapsed">0:00:00</span></span>
+            <span class="v-chip">1080p</span>
+            <span class="v-chip">CC</span>
+          </div>
+        </div>
+        <div class="video-note" style="margin-top:16px">La emisión con vídeo está activa de 07:00 a 23:00. Fuera de ese tramo el reproductor vuelve a audio automáticamente.</div>
+      </div>
+
+      <div data-mode-panel="audio">
+        <div class="cover grayscale">
+          <img src="assets/img/cover.webp" alt="Carátula de la canción que suena" data-bind="cover" width="600" height="600">
+        </div>
+        <div class="cover-meta" style="margin-top:16px">
+          <div style="min-width:0;flex:1 1 160px">
+            <div class="t" data-bind="track-title">Self Control</div>
+            <div class="a"><span data-bind="track-artist">Marea Nueva</span> · <span data-bind="track-album">Cinta B</span></div>
+          </div>
+          <span class="tag tag-accent">Nº <span data-bind="track-pos">01</span> del Top 40</span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div><div class="n">104.7</div><div class="l">FM Nacional</div></div>
+        <div><div class="n">12.480</div><div class="l">Oyentes ahora</div></div>
+        <div><div class="n">24/7</div><div class="l">Sin cortes</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Top 40 ═════════════════════════════════════════════════════════════ -->
+<section id="top40" class="section" aria-labelledby="top40-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-text">
+        <div class="kicker">La lista</div>
+        <h2 id="top40-title" class="section-title">TOP 40 RADIOSTAR</h2>
+      </div>
+      <span class="tag tag-neutral">Actualizado hoy · 11 sep 2026</span>
+      <button type="button" class="btn btn-secondary btn-start" data-action="toggle-full">Ver los 40 completos</button>
+    </div>
+
+    <div class="chart-scroll">
+      <table class="table chart-table">
+        <thead>
+          <tr>
+            <th style="width:54px">Pos</th>
+            <th>Canción</th>
+            <th class="col-prev" style="width:90px">Ant.</th>
+            <th class="col-weeks" style="width:96px">Semanas</th>
+            <th style="width:64px"><span class="sr-only">Reproducir</span></th>
+          </tr>
+        </thead>
+        <tbody data-chart></tbody>
+      </table>
+    </div>
+    <p class="chart-note">Pulsa cualquier fila para llevarla al reproductor.</p>
+  </div>
+</section>
+
+<!-- ═══ Programas ══════════════════════════════════════════════════════════ -->
+<section id="programas" class="section" aria-labelledby="programas-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-text">
+        <div class="kicker">A la carta</div>
+        <h2 id="programas-title" class="section-title">PROGRAMAS Y PODCASTS</h2>
+      </div>
+      <div class="seg">
+        <label class="seg-opt"><input type="radio" name="rs-pod" value="0" checked> Todo</label>
+        <label class="seg-opt"><input type="radio" name="rs-pod" value="1"> Directo</label>
+        <label class="seg-opt"><input type="radio" name="rs-pod" value="2"> Podcast</label>
+      </div>
+    </div>
+
+    <div class="shows-grid">
+      <article class="card show-card" data-filters="0,1">
+        <div class="show-media grayscale" role="img" aria-label="Foto del programa · Partiendo la semana"></div>
+        <div class="show-body">
+          <div class="show-tags">
+            <span class="card-kicker">En directo</span>
+            <span class="show-time">L–V · 07:00</span>
+          </div>
+          <h3 class="show-title">Partiendo la semana</h3>
+          <p class="card-body">Tatán abre el día con la actualidad, el humor y las canciones que van a sonar toda la semana.</p>
+          <div class="show-foot">
+            <button type="button" class="btn btn-primary btn-start" data-action="play-show">
+              <span class="tri" aria-hidden="true"></span>
+              Último episodio
+            </button>
+            <span class="show-dur">2 h 10 min</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card show-card" data-filters="0,1,2">
+        <div class="show-media grayscale" role="img" aria-label="Foto del programa · Los Bailables"></div>
+        <div class="show-body">
+          <div class="show-tags">
+            <span class="card-kicker">Sesión</span>
+            <span class="show-time">V–S · 22:00</span>
+          </div>
+          <h3 class="show-title">Los Bailables</h3>
+          <p class="card-body">La sesión de fin de semana: mezcla continua con lo más pedido del Top 40.</p>
+          <div class="show-foot">
+            <button type="button" class="btn btn-primary btn-start" data-action="play-show">
+              <span class="tri" aria-hidden="true"></span>
+              Último episodio
+            </button>
+            <span class="show-dur">1 h 30 min</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card show-card" data-filters="0,2">
+        <div class="show-media grayscale" role="img" aria-label="Foto del programa · Chao chao"></div>
+        <div class="show-body">
+          <div class="show-tags">
+            <span class="card-kicker">Podcast</span>
+            <span class="show-time">Nuevo cada jueves</span>
+          </div>
+          <h3 class="show-title">Chao chao</h3>
+          <p class="card-body">Entrevistas largas y despedidas en directo: el podcast de conversación de RadioStar.</p>
+          <div class="show-foot">
+            <button type="button" class="btn btn-primary btn-start" data-action="play-show">
+              <span class="tri" aria-hidden="true"></span>
+              Último episodio
+            </button>
+            <span class="show-dur">42 min</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Locutores ══════════════════════════════════════════════════════════ -->
+<section id="locutores" class="section" aria-labelledby="locutores-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-text">
+        <div class="kicker">Las voces</div>
+        <h2 id="locutores-title" class="section-title">LOCUTORES</h2>
+      </div>
+    </div>
+
+    <div class="hosts-grid">
+      <div class="host">
+        <div class="host-media grayscale" role="img" aria-label="Retrato de Tatán"></div>
+        <div>
+          <h3>Tatán</h3>
+          <div class="host-show">Partiendo la semana</div>
+          <div class="host-time">L–V · 07:00 – 09:10</div>
+        </div>
+      </div>
+      <div class="host">
+        <div class="host-media grayscale" role="img" aria-label="Retrato del locutor de Los Bailables"></div>
+        <div>
+          <h3>Por confirmar</h3>
+          <div class="host-show">Los Bailables</div>
+          <div class="host-time">V–S · 22:00 – 23:30</div>
+        </div>
+      </div>
+      <div class="host">
+        <div class="host-media grayscale" role="img" aria-label="Retrato del locutor de Chao chao"></div>
+        <div>
+          <h3>Por confirmar</h3>
+          <div class="host-show">Chao chao</div>
+          <div class="host-time">Jueves · a la carta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Noticias ═══════════════════════════════════════════════════════════ -->
+<section id="noticias" class="section" aria-labelledby="noticias-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-text">
+        <div class="kicker">Actualidad</div>
+        <h2 id="noticias-title" class="section-title">NOTICIAS MUSICALES</h2>
+      </div>
+      <a href="#noticias" class="btn btn-ghost btn-start">Ver todas</a>
+    </div>
+
+    <div class="news-grid">
+      <article class="news-item">
+        <div class="news-media grayscale" role="img" aria-label="Imagen de la noticia 1"></div>
+        <div class="news-meta">11 sep · Top 40</div>
+        <h3>Marea Nueva llega al número uno en su novena semana en lista</h3>
+        <p>«Fuego lento» adelanta a Sonora Kilo con el mayor número de peticiones del año.</p>
+      </article>
+      <article class="news-item">
+        <div class="news-media grayscale" role="img" aria-label="Imagen de la noticia 2"></div>
+        <div class="news-meta">10 sep · En directo</div>
+        <h3>Los Bailables estrena sesión con cámaras en el estudio</h3>
+        <p>La emisión del viernes se podrá ver en vídeo desde el propio reproductor.</p>
+      </article>
+      <article class="news-item">
+        <div class="news-media grayscale" role="img" aria-label="Imagen de la noticia 3"></div>
+        <div class="news-meta">08 sep · Podcast</div>
+        <h3>Chao chao abre temporada con entrevistas de una hora</h3>
+        <p>Nuevo episodio cada jueves, disponible a la carta en la web y en la app.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Comunidad ══════════════════════════════════════════════════════════ -->
+<section id="comunidad" class="community" aria-labelledby="comunidad-title">
+  <div class="wrap">
+    <div style="min-width:0">
+      <div class="community-kicker">Comunidad RadioStar</div>
+      <h2 id="comunidad-title">SUENA DONDE ESTÉS</h2>
+      <p>Pide tu canción, manda tu audio y entra en directo. Estamos al otro lado a cualquier hora.</p>
+    </div>
+
+    <div class="community-right">
+      <div class="socials">
+        <a href="#comunidad"><span class="n">WhatsApp</span><span class="h">Pide tu canción</span></a>
+        <a href="#comunidad"><span class="n">Instagram</span><span class="h">@radiostar</span></a>
+        <a href="#comunidad"><span class="n">TikTok</span><span class="h">@radiostar</span></a>
+        <a href="#comunidad"><span class="n">YouTube</span><span class="h">RadioStar TV</span></a>
+      </div>
+
+      <div class="newsletter">
+        <h3>Boletín semanal con el Top 40</h3>
+        <form data-newsletter novalidate>
+          <label class="sr-only" for="rs-email">Correo electrónico</label>
+          <input class="input" id="rs-email" type="email" name="email" placeholder="tu@correo.com" required>
+          <button type="submit" class="btn btn-start">Suscribirme</button>
+        </form>
+        <div class="newsletter-ok" data-newsletter-ok hidden role="status">Listo. Te escribimos cada lunes con la lista nueva.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Patrocinadores ═════════════════════════════════════════════════════ -->
+<section class="section" aria-label="Patrocinadores">
+  <div class="wrap" style="padding-block:clamp(22px,3vw,40px)">
+    <div class="sponsors-head">
+      <span class="eyebrow">Publicidad · con el apoyo de</span>
+      <a href="#comunidad" class="btn btn-secondary btn-start">Anúnciate en RadioStar</a>
+    </div>
+    <div class="sponsors-grid">
+      <div class="sponsor">Logo</div>
+      <div class="sponsor">Logo</div>
+      <div class="sponsor">Logo</div>
+      <div class="sponsor">Logo</div>
+      <div class="sponsor">Logo</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══ Pie ════════════════════════════════════════════════════════════════ -->
+<footer class="site-footer">
+  <div class="footer-cols">
+    <div>
+      <div class="footer-brand">
+        <span aria-hidden="true"></span>
+        <span class="n">RADIOSTAR</span>
+      </div>
+      <p>La radio del Top 40, en FM, online y en vídeo.</p>
+    </div>
+    <div>
+      <div class="footer-h">Frecuencias</div>
+      <div class="footer-list">
+        <span>Madrid · 104.7 FM</span>
+        <span>Barcelona · 98.9 FM</span>
+        <span>Valencia · 100.1 FM</span>
+        <span>Resto · streaming</span>
+      </div>
+    </div>
+    <div>
+      <div class="footer-h">Escúchanos</div>
+      <div class="footer-list">
+        <a href="#directo">App iOS</a>
+        <a href="#directo">App Android</a>
+        <a href="#directo">Altavoces inteligentes</a>
+        <a href="#directo">RadioStar TV</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-h">Radio</div>
+      <div class="footer-list">
+        <a href="#programas">Programación</a>
+        <a href="#locutores">Equipo</a>
+        <a href="#comunidad">Contacto</a>
+        <a href="#comunidad">Aviso legal</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="wrap">
+      <span>© 2026 RadioStar</span>
+      <span>104.7 FM</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ Barra de reproducción fija ═════════════════════════════════════════ -->
+<div class="player-bar" data-player-bar>
+  <div class="player-bar-inner">
+    <button type="button" class="play-md" data-action="toggle" aria-label="Reproducir o pausar">
+      <span class="tri" data-when="paused" aria-hidden="true"></span>
+      <span class="pause-bars" data-when="playing" hidden aria-hidden="true"><span></span><span></span></span>
+    </button>
+
+    <div class="bar-cover grayscale">
+      <img src="assets/img/cover.webp" alt="" data-bind="cover">
+    </div>
+
+    <div class="bar-text">
+      <div class="bar-kicker-row">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="bar-kicker" data-bind="bar-kicker">RadioStar 104.7 · en directo</span>
+      </div>
+      <div class="bar-title"><span data-bind="track-title">Self Control</span> — <span data-bind="track-artist">Marea Nueva</span></div>
+    </div>
+
+    <div class="seg">
+      <label class="seg-opt"><input type="radio" name="rs-mode-bar" value="audio" checked> Audio</label>
+      <label class="seg-opt"><input type="radio" name="rs-mode-bar" value="video"> Vídeo</label>
+    </div>
+
+    <a href="#directo" class="btn btn-open btn-start">Abrir</a>
+
+    <button type="button" class="bar-swap" data-action="swap-mode" aria-label="Cambiar entre audio y vídeo">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" data-when="audio" aria-hidden="true">
+        <rect x="2" y="6" width="14" height="12"></rect><path d="M16 11l6-3v8l-6-3z" fill="currentColor"></path>
+      </svg>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" data-when="video" hidden aria-hidden="true">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
