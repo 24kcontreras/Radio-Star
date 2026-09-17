@@ -15,12 +15,14 @@
 
 <link rel="icon" href="assets/img/logo.png">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/styles.css?v=2">
 </head>
 <body>
 
-<!-- El stream real se configura en data-stream (audio) y data-video (HLS/MP4). -->
-<audio id="rs-audio" preload="none" data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"></audio>
+<!-- El stream se configura en data-stream, la canción en directo en
+     data-nowplaying (API de AzuraCast) y el vídeo en data-video (HLS/MP4). -->
+<audio id="rs-audio" preload="none" data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"
+       data-nowplaying="https://radio.radiobendicion.cl/api/nowplaying/radio-star-online"></audio>
 
 <!-- ═══ Cabecera ═══════════════════════════════════════════════════════════ -->
 <header class="site-header">
@@ -64,17 +66,17 @@
 
     <div class="live-main">
       <div class="live-badge-row">
-        <span class="live-badge">
+        <span class="live-badge" data-live-badge>
           <span class="live-dot" aria-hidden="true"></span>
-          EN DIRECTO
+          <span data-bind="live-state">EN DIRECTO</span>
         </span>
-        <span class="live-elapsed">Emitiendo · <span data-bind="elapsed">0:00:00</span></span>
+        <span class="live-elapsed"><span data-bind="elapsed-label">Emitiendo</span> · <span data-bind="elapsed">0:00:00</span></span>
       </div>
 
       <div>
         <div class="kicker">Ahora en RadioStar</div>
         <h1 id="directo-title" class="live-title">PARTIENDO LA SEMANA</h1>
-        <div class="live-meta">con Tatán · Lunes a viernes, 07:00 – 09:10</div>
+        <div class="live-meta" data-live-meta>con Tatán · Lunes a viernes, 07:00 – 09:10</div>
       </div>
 
       <hr class="hr" style="margin:2px 0">
@@ -89,6 +91,10 @@
           <div class="eyebrow">Suena ahora</div>
           <div class="now-title" data-bind="track-title">Self Control</div>
           <div class="now-artist" data-bind="track-artist">Marea Nueva</div>
+          <div class="np-progress" data-progress hidden>
+            <i></i>
+            <span class="np-times"><span data-bind="np-elapsed">0:00</span> / <span data-bind="np-duration">0:00</span></span>
+          </div>
         </div>
 
         <div class="eq" aria-hidden="true">
@@ -119,15 +125,22 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true">
             <path d="M4 12v8h16v-8"></path><path d="M12 16V3"></path><path d="M7 8l5-5 5 5"></path>
           </svg>
-          Compartir
+          <span data-bind="share-label">Compartir</span>
         </button>
       </div>
 
       <hr class="hr" style="margin:2px 0">
 
+      <div class="next-up" data-next hidden>
+        <span class="eyebrow">A continuación</span>
+        <span class="next-track" data-bind="next-track"></span>
+      </div>
+
       <div>
         <div class="eyebrow" style="margin-bottom:8px">Ha sonado antes</div>
-        <ul class="recent-list" style="list-style:none;margin:0;padding:0">
+        <!-- Se rellena con el historial real de la emisora; el contenido de
+             ejemplo se ve mientras la API responde. -->
+        <ul class="recent-list" data-recent style="list-style:none;margin:0;padding:0">
           <li><span class="recent-time">08:41</span><span class="recent-title">Onda corta</span><span class="recent-artist">Duo Litoral</span></li>
           <li><span class="recent-time">08:36</span><span class="recent-title">Cuenta atrás</span><span class="recent-artist">Vera Molina</span></li>
           <li><span class="recent-time">08:31</span><span class="recent-title">Neón de barrio</span><span class="recent-artist">Tres Azoteas</span></li>
@@ -139,7 +152,7 @@
     <div class="stage">
       <div class="stage-head">
         <span class="eyebrow">Señal</span>
-        <div class="seg">
+        <div class="seg" data-video-only>
           <label class="seg-opt">
             <input type="radio" name="rs-mode" value="audio" checked>
             Audio
@@ -178,7 +191,7 @@
         <div class="cover-meta" style="margin-top:16px">
           <div style="min-width:0;flex:1 1 160px">
             <div class="t" data-bind="track-title">Self Control</div>
-            <div class="a"><span data-bind="track-artist">Marea Nueva</span> · <span data-bind="track-album">Cinta B</span></div>
+            <div class="a"><span data-bind="track-artist">Marea Nueva</span><span data-sep="album"> · </span><span data-bind="track-album">Cinta B</span></div>
           </div>
           <span class="tag tag-accent">Nº <span data-bind="track-pos">01</span> del Top 40</span>
         </div>
@@ -186,7 +199,7 @@
 
       <div class="stats">
         <div><div class="n">104.7</div><div class="l">FM Nacional</div></div>
-        <div><div class="n">12.480</div><div class="l">Oyentes ahora</div></div>
+        <div><div class="n" data-bind="listeners">—</div><div class="l">Oyentes ahora</div></div>
         <div><div class="n">24/7</div><div class="l">Sin cortes</div></div>
       </div>
     </div>
@@ -201,7 +214,7 @@
         <div class="kicker">La lista</div>
         <h2 id="top40-title" class="section-title">TOP 40 RADIOSTAR</h2>
       </div>
-      <span class="tag tag-neutral">Actualizado hoy · 11 sep 2026</span>
+      <span class="tag tag-neutral">Actualizado hoy · <span data-bind="chart-date">11 sep 2026</span></span>
       <button type="button" class="btn btn-secondary btn-start" data-action="toggle-full">Ver los 40 completos</button>
     </div>
 
@@ -484,17 +497,17 @@
         <span class="dot" aria-hidden="true"></span>
         <span class="bar-kicker" data-bind="bar-kicker">RadioStar 104.7 · en directo</span>
       </div>
-      <div class="bar-title"><span data-bind="track-title">Self Control</span> — <span data-bind="track-artist">Marea Nueva</span></div>
+      <div class="bar-title"><span data-bind="track-title">Self Control</span><span data-sep="artist"> — </span><span data-bind="track-artist">Marea Nueva</span></div>
     </div>
 
-    <div class="seg">
+    <div class="seg" data-video-only>
       <label class="seg-opt"><input type="radio" name="rs-mode-bar" value="audio" checked> Audio</label>
       <label class="seg-opt"><input type="radio" name="rs-mode-bar" value="video"> Vídeo</label>
     </div>
 
     <a href="#directo" class="btn btn-open btn-start">Abrir</a>
 
-    <button type="button" class="bar-swap" data-action="swap-mode" aria-label="Cambiar entre audio y vídeo">
+    <button type="button" class="bar-swap" data-video-only data-action="swap-mode" aria-label="Cambiar entre audio y vídeo">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" data-when="audio" aria-hidden="true">
         <rect x="2" y="6" width="14" height="12"></rect><path d="M16 11l6-3v8l-6-3z" fill="currentColor"></path>
       </svg>
@@ -505,6 +518,6 @@
   </div>
 </div>
 
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js?v=2"></script>
 </body>
 </html>

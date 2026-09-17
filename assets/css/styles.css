@@ -393,6 +393,31 @@ figure { margin: 0; }
 }
 .vol-blocks button.is-on { background: var(--color-text); }
 
+/* Progreso de la canción en emisión: se alimenta del tiempo que informa la
+   emisora, por eso sólo aparece cuando hay datos. */
+.np-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; max-width: 320px; }
+.np-progress i {
+  flex: 1 1 auto; height: 3px; background: var(--color-neutral-300);
+  position: relative; overflow: hidden;
+}
+.np-progress i::after {
+  content: ''; position: absolute; inset: 0 auto 0 0;
+  width: var(--np, 0%); background: var(--color-accent);
+  transition: width .9s linear;
+}
+.np-times {
+  flex: none; font-size: 11px; letter-spacing: .06em;
+  color: var(--color-neutral-600); font-variant-numeric: tabular-nums;
+}
+
+/* Próxima canción anunciada por la emisora. */
+.next-up { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.next-track { font-family: var(--font-heading); font-weight: 600; font-size: 14px; min-width: 0; }
+
+/* Emisora caída o en pausa: el distintivo deja de gritar "en directo". */
+.live-badge.is-off { background: var(--color-neutral-400); }
+.live-badge.is-off .live-dot { animation: none; }
+
 .recent-list { display: flex; flex-direction: column; }
 .recent-list li {
   display: flex; gap: 12px; align-items: baseline; padding: 7px 0;
