@@ -297,7 +297,7 @@ figure { margin: 0; }
   display: flex; align-items: center; gap: clamp(14px, 2.5vw, 34px); flex-wrap: wrap;
 }
 .brand { display: flex; align-items: center; margin-right: auto; text-decoration: none; color: inherit; min-width: 0; }
-.brand img { height: 56px; width: auto; }
+.brand img { height: 42px; width: auto; }
 
 .nav-main {
   display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); flex-wrap: wrap;
@@ -675,7 +675,7 @@ figure { margin: 0; }
 
   .nav-main { display: none; }
   .nav-mobile { display: flex; }
-  .brand img { height: 44px; }
+  .brand img { height: 33px; }
 
   /* En móvil la carátula/vídeo va primero, antes del bloque de texto. */
   .stage { order: -1; border-left: 0; border-bottom: 2px solid var(--color-divider); }
