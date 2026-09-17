@@ -196,7 +196,7 @@
     $all('[data-sep="album"]').forEach(function (el) { el.hidden = !(t.artist && t.album); });
     bind('bar-kicker', state.mode === 'video'
       ? 'RadioStar TV · en directo'
-      : 'RadioStar 104.7 · en directo');
+      : 'RadioStar · en directo');
 
     // Play / pausa en los tres reproductores (hero, vídeo, barra fija).
     $all('[data-when="playing"]').forEach(function (el) { el.hidden = !state.playing; });
@@ -421,7 +421,7 @@
     var t = currentTrack();
     var suena = t.artist ? t.title + ' — ' + t.artist : t.title;
     var data = {
-      title: 'RadioStar 104.7',
+      title: 'RadioStar',
       text: 'Suena ' + suena + ' en RadioStar',
       url: location.href
     };
@@ -574,7 +574,7 @@
     if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: t.title || 'RadioStar',
-      artist: t.artist || 'RadioStar 104.7',
+      artist: t.artist || 'RadioStar',
       album: t.album || 'En directo',
       artwork: t.art ? [{ src: t.art, sizes: '512x512', type: 'image/jpeg' }] : []
     });
