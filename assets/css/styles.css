@@ -108,6 +108,14 @@
 
 html { scroll-behavior: smooth; }
 
+/* Vista al 90%: equivale a bajar el zoom del navegador un escalon. Todo
+   encoge por igual (tipografia, espaciados, imagenes) y el contenido respira
+   mas dentro de la ventana. Se deja fuera el movil, donde la pantalla ya es
+   estrecha y encoger la letra la volveria dificil de leer. */
+@media (min-width: 760px) {
+  :root { zoom: .9; }
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -499,6 +507,7 @@ figure { margin: 0; }
 .move-flat { color: var(--color-neutral-500); font-size: 13px; }
 .chart-weeks { font-variant-numeric: tabular-nums; color: var(--color-neutral-800); }
 .chart-note { font-size: 12px; color: var(--color-neutral-700); margin-top: 12px; }
+.chart-aviso { padding: 28px 12px; text-align: center; font-size: 14px; color: var(--color-neutral-700); }
 
 /* ── Programas ──────────────────────────────────────────────────────────── */
 .shows-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: clamp(14px, 2vw, 24px); }

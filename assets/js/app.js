@@ -7,22 +7,16 @@
   'use strict';
 
   /* ── Datos ─────────────────────────────────────────────────────────────── */
-  var CHART = [
-    { title: 'Self Control',        artist: 'Marea Nueva',  album: 'Cinta B',  pos: 1,  prev: 2,  weeks: 9  },
-    { title: 'Bailables (edit)',    artist: 'Sonora Kilo',  album: 'Vueltas',  pos: 2,  prev: 1,  weeks: 14 },
-    { title: 'Chao chao',           artist: 'Lupe Ferrer',  album: 'Chao chao',pos: 3,  prev: 7,  weeks: 4  },
-    { title: 'Neón de barrio',      artist: 'Tres Azoteas', album: 'Azotea',   pos: 4,  prev: 4,  weeks: 11 },
-    { title: 'Media noche exacta',  artist: 'Ala Norte',    album: 'Turnos',   pos: 5,  prev: 3,  weeks: 6  },
-    { title: 'Cuenta atrás',        artist: 'Vera Molina',  album: 'Sal',      pos: 6,  prev: 12, weeks: 2  },
-    { title: 'Tanto',               artist: 'El Radar',     album: 'Antena',   pos: 7,  prev: 5,  weeks: 8  },
-    { title: 'Onda corta',          artist: 'Duo Litoral',  album: 'Faro',     pos: 8,  prev: 8,  weeks: 16 },
-    { title: 'Se nos hizo tarde',   artist: 'Nico Paz',     album: 'Tarde',    pos: 9,  prev: 15, weeks: 3  },
-    { title: 'Sal de la pista',     artist: 'Kiosko 7',     album: 'Pista',    pos: 10, prev: 6,  weeks: 10 },
-    { title: 'Tormenta buena',      artist: 'Marea Nueva',  album: 'Cinta B',  pos: 11, prev: 18, weeks: 2  },
-    { title: 'Ruido bonito',        artist: 'La Pausa',     album: 'Pausa',    pos: 12, prev: 9,  weeks: 7  }
-  ];
+  // El Top 40 sale del historial real de emisión: lo calcula /api/top40
+  // contando lo que la emisora ha puesto al aire estos últimos 7 días.
+  // Hasta que responda, la lista está vacía a propósito: antes un hueco
+  // honesto que una lista inventada.
+  var CHART = [];
 
   var VISIBLE_ROWS = 10;  // filas del Top 40 antes de "Ver los 40 completos"
+  var CARGANDO = 'Contando las emisiones de la semana…';
+  var SIN_LISTA = 'El Top 40 no está disponible ahora mismo. Vuelve a intentarlo en un rato.';
+  var chartAviso = CARGANDO;   // lo que se enseña mientras la tabla está vacía
   var VOL_STEPS = 10;
 
   /* ── Preferencias guardadas ────────────────────────────────────────────── */
@@ -51,6 +45,8 @@
     full: false,
     scrolled: false,
     live: null,       // lo que emite la estación ahora mismo (null = sin datos)
+    liveIdx: null,    // fila del Top 40 que suena, si es que está en la lista
+    liveSong: null,   // la canción con sus etiquetas crudas, para buscarla en la lista
     np: null,         // respuesta completa de la emisora (oyentes, historial…)
     status: 'idle'    // idle | loading | playing | error
   };
@@ -87,10 +83,11 @@
     });
   }
 
-  // Lo que se muestra: si la estación ha respondido, manda la emisión en
-  // directo; si no, el Top 40 sirve de demostración.
+  // Lo que se muestra: manda siempre la emisión en directo. El Top 40 sólo
+  // entra cuando el oyente ha pulsado una fila y la emisora aún no ha dicho
+  // qué suena. Puede no haber nada: entonces se deja el texto del HTML.
   function currentTrack() {
-    return state.live || CHART[state.idx] || CHART[0];
+    return state.live || CHART[state.idx] || null;
   }
 
   function likeKey(t) {
@@ -105,46 +102,103 @@
   }
 
   /* ── Top 40 ────────────────────────────────────────────────────────────── */
-  function movementCell(t) {
+  // Los nombres vienen de las etiquetas de los archivos de la emisora, así que
+  // son texto ajeno: la tabla se construye con nodos, nunca con innerHTML.
+  function el(tag, clase, texto) {
+    var n = document.createElement(tag);
+    if (clase) n.className = clase;
+    if (texto != null) n.textContent = texto;
+    return n;
+  }
+
+  function esNueva(t) { return t.prev === null || t.prev === undefined; }
+
+  function movimiento(t) {
+    if (esNueva(t)) return { clase: 'move-up', texto: 'NUEVA' };
     var diff = Math.abs(t.prev - t.pos);
-    if (t.prev > t.pos) return '<span class="move-up">▲ ' + diff + '</span>';
-    if (t.prev < t.pos) return '<span class="move-down">▼ ' + diff + '</span>';
-    return '<span class="move-flat">—</span>';
+    if (t.prev > t.pos) return { clase: 'move-up', texto: '▲ ' + diff };
+    if (t.prev < t.pos) return { clase: 'move-down', texto: '▼ ' + diff };
+    return { clase: 'move-flat', texto: '—' };
   }
 
   function trendText(t) {
+    if (esNueva(t)) return 'entra nueva';
     if (t.prev === t.pos) return 'se mantiene';
     return (t.prev > t.pos ? '▲ sube ' : '▼ baja ') + Math.abs(t.prev - t.pos);
+  }
+
+  // Una fila ocupando toda la tabla, para «cargando» y para los errores.
+  function filaAviso(texto) {
+    var tr = document.createElement('tr');
+    var td = el('td', 'chart-aviso', texto);
+    td.colSpan = 5;
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function filaCancion(t, i) {
+    var tr = document.createElement('tr');
+    tr.dataset.row = String(i);
+
+    tr.appendChild(el('td', 'chart-pos', pad(t.pos)));
+
+    var celda = el('td');
+    celda.style.minWidth = '0';
+    var song = el('div', 'chart-song');
+    // La marca roja señala la canción que está sonando de verdad ahora mismo.
+    if (i === state.liveIdx) {
+      var cur = el('span', 'chart-cur');
+      cur.setAttribute('aria-hidden', 'true');
+      song.appendChild(cur);
+    }
+    var caja = el('div');
+    caja.style.minWidth = '0';
+    caja.appendChild(el('div', 'chart-name', t.title));
+    caja.appendChild(el('div', 'chart-artist', t.artist));
+    caja.appendChild(el('div', 'chart-trend-mobile', trendText(t) + ' · ' + t.weeks + ' sem.'));
+    song.appendChild(caja);
+    celda.appendChild(song);
+    tr.appendChild(celda);
+
+    var mov = movimiento(t);
+    var tdPrev = el('td', 'col-prev');
+    tdPrev.appendChild(el('span', mov.clase, mov.texto));
+    tr.appendChild(tdPrev);
+
+    tr.appendChild(el('td', 'col-weeks chart-weeks', t.weeks));
+
+    var tdBtn = el('td');
+    var btn = el('button', 'btn btn-secondary btn-icon');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Reproducir ' + t.title);
+    var tri = el('span', 'tri');
+    tri.style.setProperty('--tri', '9px');
+    tri.style.marginLeft = '2px';
+    tri.setAttribute('aria-hidden', 'true');
+    btn.appendChild(tri);
+    tdBtn.appendChild(btn);
+    tr.appendChild(tdBtn);
+
+    return tr;
   }
 
   function renderChart() {
     var tbody = document.querySelector('[data-chart]');
     if (!tbody) return;
-    var limit = state.full ? CHART.length : Math.min(CHART.length, VISIBLE_ROWS);
 
-    tbody.innerHTML = CHART.slice(0, limit).map(function (t, i) {
-      return '' +
-        '<tr data-row="' + i + '">' +
-          '<td class="chart-pos">' + pad(t.pos) + '</td>' +
-          '<td style="min-width:0">' +
-            '<div class="chart-song">' +
-              (i === state.idx ? '<span class="chart-cur" aria-hidden="true"></span>' : '') +
-              '<div style="min-width:0">' +
-                '<div class="chart-name">' + t.title + '</div>' +
-                '<div class="chart-artist">' + t.artist + '</div>' +
-                '<div class="chart-trend-mobile">' + trendText(t) + ' · ' + t.weeks + ' sem.</div>' +
-              '</div>' +
-            '</div>' +
-          '</td>' +
-          '<td class="col-prev">' + movementCell(t) + '</td>' +
-          '<td class="col-weeks chart-weeks">' + t.weeks + '</td>' +
-          '<td>' +
-            '<button type="button" class="btn btn-secondary btn-icon" aria-label="Reproducir ' + t.title + '">' +
-              '<span class="tri" style="--tri:9px;margin-left:2px" aria-hidden="true"></span>' +
-            '</button>' +
-          '</td>' +
-        '</tr>';
-    }).join('');
+    tbody.textContent = '';
+
+    if (!CHART.length) {
+      tbody.appendChild(filaAviso(chartAviso));
+      tbody.setAttribute('aria-busy', chartAviso === CARGANDO ? 'true' : 'false');
+      return;
+    }
+
+    var limit = state.full ? CHART.length : Math.min(CHART.length, VISIBLE_ROWS);
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < limit; i++) frag.appendChild(filaCancion(CHART[i], i));
+    tbody.appendChild(frag);
+    tbody.setAttribute('aria-busy', 'false');
   }
 
   /* ── Volumen ───────────────────────────────────────────────────────────── */
@@ -176,24 +230,33 @@
 
     document.body.classList.toggle('is-playing', state.playing);
 
-    bind('track-title', t.title);
-    bind('track-artist', t.artist);
-    bind('track-album', t.album);
-    bind('track-pos', t.pos ? pad(t.pos) : '—');
-    bindSrc('cover', t.art);
+    // Mientras la emisora no diga qué suena y nadie haya pulsado una fila, no
+    // hay canción que anunciar: se deja el texto que trae el HTML en lugar de
+    // pintar huecos. Lo demás del render sigue su curso.
+    if (t) {
+      bind('track-title', t.title);
+      bind('track-artist', t.artist);
+      bind('track-album', t.album);
+      bind('track-pos', t.pos ? pad(t.pos) : '—');
+      bindSrc('cover', t.art);
+
+      // El distintivo "Nº X del Top 40" sólo tiene sentido si la canción figura
+      // en la lista; lo que suena en directo muchas veces no está.
+      $all('[data-bind="track-pos"]').forEach(function (el) {
+        var tag = el.closest('.tag');
+        if (tag) tag.hidden = !t.pos;
+      });
+
+      // Muchos archivos llegan sin artista o sin álbum en sus etiquetas: se
+      // ocultan los separadores para no dejar guiones sueltos.
+      $all('[data-sep="artist"]').forEach(function (el) { el.hidden = !t.artist; });
+      $all('[data-sep="album"]').forEach(function (el) { el.hidden = !(t.artist && t.album); });
+    } else if (state.online === false) {
+      // La emisora no contesta: el "Conectando…" del HTML dejaría de ser cierto.
+      bind('track-title', 'Sin señal de la emisora');
+    }
+
     bind('elapsed', elapsedText());
-
-    // El distintivo "Nº X del Top 40" sólo tiene sentido si la canción figura
-    // en la lista; lo que suena en directo muchas veces no está.
-    $all('[data-bind="track-pos"]').forEach(function (el) {
-      var tag = el.closest('.tag');
-      if (tag) tag.hidden = !t.pos;
-    });
-
-    // Muchos archivos llegan sin artista o sin álbum en sus etiquetas: se
-    // ocultan los separadores para no dejar guiones sueltos.
-    $all('[data-sep="artist"]').forEach(function (el) { el.hidden = !t.artist; });
-    $all('[data-sep="album"]').forEach(function (el) { el.hidden = !(t.artist && t.album); });
     bind('bar-kicker', state.mode === 'video'
       ? 'RadioStar TV · en directo'
       : 'RadioStar · en directo');
@@ -217,7 +280,8 @@
     // siga valiendo cuando lo que suena viene de la emisora.
     var likeBtn = document.querySelector('[data-action="like"]');
     if (likeBtn) {
-      var liked = !!state.liked[likeKey(t)];
+      likeBtn.disabled = !t;
+      var liked = !!(t && state.liked[likeKey(t)]);
       likeBtn.setAttribute('aria-pressed', String(liked));
       var path = likeBtn.querySelector('svg');
       if (path) {
@@ -228,7 +292,12 @@
     }
 
     var fullBtn = document.querySelector('[data-action="toggle-full"]');
-    if (fullBtn) fullBtn.textContent = state.full ? 'Ver el top 10' : 'Ver los 40 completos';
+    if (fullBtn) {
+      fullBtn.hidden = CHART.length <= VISIBLE_ROWS;
+      fullBtn.textContent = state.full
+        ? 'Ver el top ' + VISIBLE_ROWS
+        : 'Ver los ' + CHART.length + ' completos';
+    }
 
     if (bar) bar.classList.toggle('is-visible', state.scrolled);
 
@@ -357,7 +426,9 @@
           return;
 
         case 'like':
-          var key = likeKey(currentTrack());
+          var actual = currentTrack();
+          if (!actual) return;
+          var key = likeKey(actual);
           if (state.liked[key]) {
             delete state.liked[key];
           } else {
@@ -419,10 +490,10 @@
 
   function share() {
     var t = currentTrack();
-    var suena = t.artist ? t.title + ' — ' + t.artist : t.title;
+    var suena = t ? (t.artist ? t.title + ' — ' + t.artist : t.title) : '';
     var data = {
       title: 'RadioStar',
-      text: 'Suena ' + suena + ' en RadioStar',
+      text: suena ? 'Suena ' + suena + ' en RadioStar' : 'Escucha RadioStar en directo',
       url: location.href
     };
     if (navigator.share) {
@@ -502,17 +573,45 @@
   /* ── Canción en directo ────────────────────────────────────────────────── */
   // AzuraCast publica lo que está emitiendo en /api/nowplaying/<estación>;
   // la URL se configura en data-nowplaying. Sin ella la página no consulta
-  // nada y sigue funcionando con el Top 40 de ejemplo.
+  // nada y la ficha de "suena ahora" se queda con el texto del HTML.
   var NP_URL = audio && audio.dataset.nowplaying;
   var NP_EVERY = 15000;   // la API se cachea 15 s: pedirla más seguido no aporta
   var NP_RETRY = 30000;   // si la estación no responde, se espera más
 
-  function chartPos(title) {
-    var name = String(title || '').toLowerCase();
-    for (var i = 0; i < CHART.length; i++) {
-      if (CHART[i].title.toLowerCase() === name) return CHART[i].pos;
-    }
-    return null;
+  // /api/top40 devuelve, con cada puesto, las variantes de etiqueta
+  // «artista|título» con las que esa canción ha salido al aire. Buscando por
+  // ahí se reconoce lo que suena sin duplicar en el cliente la limpieza de
+  // metadatos que ya hace el servidor.
+  var porEtiqueta = Object.create(null);
+
+  function indexaEtiquetas() {
+    porEtiqueta = Object.create(null);
+    CHART.forEach(function (t, i) {
+      (t.keys || []).forEach(function (k) {
+        if (!(k in porEtiqueta)) porEtiqueta[k] = i;
+      });
+    });
+  }
+
+  // Devuelve la fila del Top 40 que corresponde a esta canción, o null.
+  function chartIndex(song) {
+    // Misma forma Unicode que usa el servidor al montar las claves: una «ñ»
+    // descompuesta bastaría para no reconocer la canción.
+    var s = String((song && song.artist) || '') + '|' + String((song && song.title) || '');
+    var etiqueta = (s.normalize ? s.normalize('NFC') : s).toLowerCase().trim();
+    return etiqueta in porEtiqueta ? porEtiqueta[etiqueta] : null;
+  }
+
+  // Nombre presentable de una canción. Si está en el Top 40 se aprovecha el
+  // que ya limpió el servidor, para que la ficha de "suena ahora" y la lista
+  // no se contradigan. Si no está, se enseña la etiqueta tal cual viene.
+  function nombreLimpio(song) {
+    var i = chartIndex(song);
+    if (i !== null) return { title: CHART[i].title, artist: CHART[i].artist };
+    return {
+      title: String((song && (song.title || song.text)) || ''),
+      artist: String((song && song.artist) || '')
+    };
   }
 
   function songLine(song) {
@@ -534,14 +633,15 @@
     list.textContent = '';
     history.slice(0, 4).forEach(function (item) {
       var song = item.song || {};
+      var nombre = nombreLimpio(song);
       var li = document.createElement('li');
 
       // Se construye con nodos de texto: los títulos vienen de las etiquetas
       // de los archivos y no deben interpretarse como HTML.
       [
         ['recent-time', hourOf(item.played_at)],
-        ['recent-title', song.title || song.text || ''],
-        ['recent-artist', song.artist || '']
+        ['recent-title', nombre.title],
+        ['recent-artist', nombre.artist]
       ].forEach(function (pair) {
         var span = document.createElement('span');
         span.className = pair[0];
@@ -610,7 +710,8 @@
       if (next) bind('next-track', songLine(next));
     }
 
-    renderHistory(data && data.song_history);
+    state.historial = (data && data.song_history) || null;
+    renderHistory(state.historial);
 
     if (!song) { render(); return NP_EVERY; }
 
@@ -620,13 +721,23 @@
       syncAt: Date.now()
     };
 
+    var idx = chartIndex(song);
+    var nombre = nombreLimpio(song);
+
+    state.liveSong = song;
     state.live = {
-      title: song.title || song.text || 'En emisión',
-      artist: song.artist || '',
+      title: nombre.title || 'En emisión',
+      artist: nombre.artist,
       album: song.album || '',
       art: song.art || '',
-      pos: chartPos(song.title)
+      pos: idx === null ? null : CHART[idx].pos
     };
+
+    // Al cambiar de canción se repinta la tabla para mover la marca roja.
+    if (idx !== state.liveIdx) {
+      state.liveIdx = idx;
+      renderChart();
+    }
 
     updateMediaSession(state.live);
     render();
@@ -659,11 +770,6 @@
   // más vale no enseñar un botón que no lleva a ninguna parte.
   if (!hasVideo) $all('[data-video-only]').forEach(function (el) { el.hidden = true; });
 
-  // La fecha del Top 40 la pone el navegador, no queda congelada en el HTML.
-  bind('chart-date', new Date().toLocaleDateString('es-CL', {
-    day: 'numeric', month: 'short', year: 'numeric'
-  }));
-
   // Los mandos del sistema (auriculares, pantalla de bloqueo) controlan la radio.
   if ('mediaSession' in navigator) {
     try {
@@ -672,8 +778,54 @@
     } catch (e) { /* navegador sin soporte completo */ }
   }
 
+  /* ── Carga del Top 40 ──────────────────────────────────────────────────── */
+  // La lista la calcula /api/top40 a partir del historial de emisión de la
+  // estación: son las canciones que más ha puesto al aire en los últimos
+  // siete días. Si la petición falla no se inventa nada, se dice.
+  var FECHA_CHART = { day: 'numeric', month: 'short', year: 'numeric' };
+
+  function cargaChart() {
+    fetch('/api/top40', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || !data.top || !data.top.length) throw new Error('lista vacía');
+
+        CHART = data.top;
+        indexaEtiquetas();
+
+        // Si la emisora ya había dicho qué suena, ahora se puede situar en la
+        // lista: el orden de llegada de las dos peticiones no está garantizado.
+        if (state.liveSong) {
+          state.liveIdx = chartIndex(state.liveSong);
+          var nombre = nombreLimpio(state.liveSong);
+          state.live.title = nombre.title || state.live.title;
+          state.live.artist = nombre.artist;
+          state.live.pos = state.liveIdx === null ? null : CHART[state.liveIdx].pos;
+        }
+        if (state.historial) renderHistory(state.historial);
+
+        var cierre = new Date(data.actualizado);
+        bind('chart-date', isNaN(cierre.getTime())
+          ? ''
+          : cierre.toLocaleDateString('es-CL', FECHA_CHART));
+
+        renderChart();
+        render();
+      })
+      .catch(function () {
+        chartAviso = SIN_LISTA;
+        CHART = [];
+        renderChart();
+        render();
+      });
+  }
+
   renderChart();
   render();
   onScroll();
+  cargaChart();
   if (NP_URL) pollNowPlaying();
 })();

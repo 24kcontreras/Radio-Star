@@ -15,7 +15,7 @@
 
 <link rel="icon" href="assets/img/logo.png">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=6">
+<link rel="stylesheet" href="assets/css/styles.css?v=7">
 </head>
 <body>
 
@@ -89,8 +89,8 @@
 
         <div style="min-width:0;flex:1 1 200px">
           <div class="eyebrow">Suena ahora</div>
-          <div class="now-title" data-bind="track-title">Self Control</div>
-          <div class="now-artist" data-bind="track-artist">Marea Nueva</div>
+          <div class="now-title" data-bind="track-title">Conectando con la emisora…</div>
+          <div class="now-artist" data-bind="track-artist"></div>
           <div class="np-progress" data-progress hidden>
             <i></i>
             <span class="np-times"><span data-bind="np-elapsed">0:00</span> / <span data-bind="np-duration">0:00</span></span>
@@ -190,10 +190,10 @@
         </div>
         <div class="cover-meta" style="margin-top:16px">
           <div style="min-width:0;flex:1 1 160px">
-            <div class="t" data-bind="track-title">Self Control</div>
-            <div class="a"><span data-bind="track-artist">Marea Nueva</span><span data-sep="album"> · </span><span data-bind="track-album">Cinta B</span></div>
+            <div class="t" data-bind="track-title">Conectando con la emisora…</div>
+            <div class="a"><span data-bind="track-artist"></span><span data-sep="album" hidden> · </span><span data-bind="track-album"></span></div>
           </div>
-          <span class="tag tag-accent">Nº <span data-bind="track-pos">01</span> del Top 40</span>
+          <span class="tag tag-accent" hidden>Nº <span data-bind="track-pos">—</span> del Top 40</span>
         </div>
       </div>
 
@@ -214,7 +214,7 @@
         <div class="kicker">La lista</div>
         <h2 id="top40-title" class="section-title">TOP 40 RADIOSTAR</h2>
       </div>
-      <span class="tag tag-neutral">Actualizado hoy · <span data-bind="chart-date">11 sep 2026</span></span>
+      <span class="tag tag-neutral">Emisiones de los últimos 7 días · <span data-bind="chart-date">—</span></span>
       <button type="button" class="btn btn-secondary btn-start" data-action="toggle-full">Ver los 40 completos</button>
     </div>
 
@@ -229,10 +229,10 @@
             <th style="width:64px"><span class="sr-only">Reproducir</span></th>
           </tr>
         </thead>
-        <tbody data-chart></tbody>
+        <tbody data-chart aria-busy="true"></tbody>
       </table>
     </div>
-    <p class="chart-note">Pulsa cualquier fila para llevarla al reproductor.</p>
+    <p class="chart-note">Se ordena por número de emisiones reales en antena. «Ant.» es el puesto de hace siete días.</p>
   </div>
 </section>
 
@@ -506,7 +506,7 @@
         <span class="dot" aria-hidden="true"></span>
         <span class="bar-kicker" data-bind="bar-kicker">RadioStar · en directo</span>
       </div>
-      <div class="bar-title"><span data-bind="track-title">Self Control</span><span data-sep="artist"> — </span><span data-bind="track-artist">Marea Nueva</span></div>
+      <div class="bar-title"><span data-bind="track-title">Conectando con la emisora…</span><span data-sep="artist" hidden> — </span><span data-bind="track-artist"></span></div>
     </div>
 
     <div class="seg" data-video-only>
@@ -527,7 +527,7 @@
   </div>
 </div>
 
-<script src="assets/js/app.js?v=3"></script>
+<script src="assets/js/app.js?v=4"></script>
 <script src="assets/js/noticias.js?v=1" defer></script>
 </body>
 </html>
