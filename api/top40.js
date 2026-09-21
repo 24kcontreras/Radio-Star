@@ -202,9 +202,14 @@ function normaliza(cancion) {
   // aunque el nombre corregido sea muy distinto del original.
   var k = clave(artista, titulo);
   var corregido = CORRECCIONES[k];
-  if (corregido) return { artista: corregido.artist, titulo: corregido.title, clave: k };
+  if (corregido) {
+    return {
+      artista: corregido.artist, titulo: corregido.title,
+      art: corregido.art || '', clave: k
+    };
+  }
 
-  return { artista: capitaliza(artista), titulo: capitaliza(titulo), clave: k };
+  return { artista: capitaliza(artista), titulo: capitaliza(titulo), art: '', clave: k };
 }
 
 /* ── Historial de la emisora ────────────────────────────────────────────── */
@@ -301,11 +306,15 @@ function rankea(filas) {
     // reconocer la canción que suena ahora y marcarla en la lista.
     entrada.raw[etiquetaCruda(cancion)] = true;
 
+    // La carátula del catálogo manda sobre la de la emisora: AzuraCast sirve
+    // la misma imagen por defecto para todos los archivos.
+    if (limpio.art) entrada.art = limpio.art;
+
     var cuando = Number(fila && (fila.played_at || fila.timestamp)) || 0;
     if (cuando >= entrada.last) {
       entrada.last = cuando;
       if (cancion && cancion.album) entrada.album = String(cancion.album);
-      if (cancion && cancion.art) entrada.art = String(cancion.art);
+      if (!limpio.art && cancion && cancion.art) entrada.art = String(cancion.art);
     }
   });
 

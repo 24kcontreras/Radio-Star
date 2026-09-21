@@ -735,17 +735,24 @@
   // no se contradigan. Si no está, se enseña la etiqueta tal cual viene.
   function nombreLimpio(song) {
     var i = chartIndex(song);
-    if (i !== null) return { title: CHART[i].title, artist: CHART[i].artist };
+    // La carátula viene del mismo sitio que el nombre: la emisora sirve una
+    // imagen por defecto idéntica para todos los archivos, así que sólo vale
+    // la del catálogo.
+    if (i !== null) return { title: CHART[i].title, artist: CHART[i].artist, art: CHART[i].art || '' };
     return {
       title: String((song && (song.title || song.text)) || ''),
-      artist: String((song && song.artist) || '')
+      artist: String((song && song.artist) || ''),
+      art: ''
     };
   }
 
+  // "A continuación" sale de las mismas etiquetas sucias que todo lo demás:
+  // se pasa por la limpieza para no contradecir a la lista y a la ficha.
   function songLine(song) {
     if (!song) return '';
-    if (song.artist && song.title) return song.title + ' — ' + song.artist;
-    return song.title || song.text || '';
+    var n = nombreLimpio(song);
+    if (n.artist && n.title) return n.title + ' — ' + n.artist;
+    return n.title || song.text || '';
   }
 
   function hourOf(epoch) {
@@ -857,7 +864,7 @@
       title: nombre.title || 'En emisión',
       artist: nombre.artist,
       album: song.album || '',
-      art: song.art || '',
+      art: nombre.art || song.art || '',
       pos: idx === null ? null : CHART[idx].pos
     };
 
@@ -931,6 +938,7 @@
           var nombre = nombreLimpio(state.liveSong);
           state.live.title = nombre.title || state.live.title;
           state.live.artist = nombre.artist;
+          if (nombre.art) state.live.art = nombre.art;
           state.live.pos = state.liveIdx === null ? null : CHART[state.liveIdx].pos;
         }
         if (state.historial) renderHistory(state.historial);

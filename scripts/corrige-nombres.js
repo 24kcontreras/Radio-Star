@@ -172,7 +172,13 @@ async function busca(consulta) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var datos = await res.json();
       var lista = (datos.results || []).map(function (r) {
-        return { artist: r.artistName, title: r.trackName };
+        // La miniatura viene a 100 px; el catálogo sirve cualquier tamaño en
+        // la misma ruta, y la ficha del reproductor la pinta a 600.
+        return {
+          artist: r.artistName,
+          title: r.trackName,
+          art: r.artworkUrl100 ? String(r.artworkUrl100).replace('100x100', '600x600') : ''
+        };
       });
       cache[consulta] = lista;
       await duerme(PAUSA_MS);
@@ -265,6 +271,7 @@ if (require.main !== module) return;
     if (!mejor || mejor.puntos === 0) { sinResultado++; continue; }
 
     var propuesta = { artist: mejor.r.artist, title: mejor.r.title };
+    if (mejor.r.art) propuesta.art = mejor.r.art;
     var registro = {
       original: { artist: c.artist, title: c.title },
       limpio: { artist: limpio.artista, title: limpio.titulo },
@@ -275,9 +282,16 @@ if (require.main !== module) return;
     };
 
     if (mejor.puntos >= UMBRAL) {
-      // Si el catálogo dice lo mismo que ya teníamos, no hace falta corregir.
-      if (plano(limpio.artista) === plano(propuesta.artist) &&
-          plano(limpio.titulo) === plano(propuesta.title)) { yaBien++; continue; }
+      var mismoNombre = plano(limpio.artista) === plano(propuesta.artist) &&
+                        plano(limpio.titulo) === plano(propuesta.title);
+      if (mismoNombre) {
+        yaBien++;
+        // El nombre no hay que tocarlo, pero la carátula sí interesa: la
+        // emisora sirve la misma imagen por defecto para todo.
+        if (!propuesta.art) continue;
+        correcciones[limpio.clave] = { artist: limpio.artista, title: limpio.titulo, art: propuesta.art };
+        continue;
+      }
       correcciones[limpio.clave] = propuesta;
     } else {
       revisar.push(registro);
@@ -289,7 +303,9 @@ if (require.main !== module) return;
 
   console.log('3. Resultado');
   console.log('   correcciones aplicadas : ' + Object.keys(correcciones).length);
-  console.log('   ya estaban bien        : ' + yaBien);
+  console.log('   ya estaban bien        : ' + yaBien + ' (se les guarda la carátula igual)');
+  console.log('   con carátula           : ' +
+    Object.keys(correcciones).filter(function (k) { return correcciones[k].art; }).length);
   console.log('   para revisar a mano    : ' + revisar.length);
   console.log('   sin coincidencia       : ' + sinResultado + '  (megamixes, ediciones de DJ…)');
   console.log('   descartadas al limpiar : ' + saltadas);
