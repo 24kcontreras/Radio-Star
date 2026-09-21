@@ -47,6 +47,7 @@
     live: null,       // lo que emite la estación ahora mismo (null = sin datos)
     liveIdx: null,    // fila del Top 40 que suena, si es que está en la lista
     liveSong: null,   // la canción con sus etiquetas crudas, para buscarla en la lista
+    siguiente: null,  // la que viene después, para repintarla al llegar el diccionario
     np: null,         // respuesta completa de la emisora (oyentes, historial…)
     status: 'idle'    // idle | loading | playing | error
   };
@@ -712,6 +713,11 @@
   // metadatos que ya hace el servidor.
   var porEtiqueta = Object.create(null);
 
+  // Nombre presentable de CUALQUIER canción emitida esta semana, esté o no en
+  // la lista. Es lo que evita que la ficha de "suena ahora" enseñe la etiqueta
+  // cruda cada vez que suena algo que no llega al Top 40, que es a menudo.
+  var NOMBRES = Object.create(null);
+
   function indexaEtiquetas() {
     porEtiqueta = Object.create(null);
     CHART.forEach(function (t, i) {
@@ -722,11 +728,15 @@
   }
 
   // Devuelve la fila del Top 40 que corresponde a esta canción, o null.
-  function chartIndex(song) {
-    // Misma forma Unicode que usa el servidor al montar las claves: una «ñ»
-    // descompuesta bastaría para no reconocer la canción.
+  // Misma forma Unicode que usa el servidor al montar las claves: una «ñ»
+  // descompuesta bastaría para no reconocer la canción.
+  function etiquetaDe(song) {
     var s = String((song && song.artist) || '') + '|' + String((song && song.title) || '');
-    var etiqueta = (s.normalize ? s.normalize('NFC') : s).toLowerCase().trim();
+    return (s.normalize ? s.normalize('NFC') : s).toLowerCase().trim();
+  }
+
+  function chartIndex(song) {
+    var etiqueta = etiquetaDe(song);
     return etiqueta in porEtiqueta ? porEtiqueta[etiqueta] : null;
   }
 
@@ -734,11 +744,14 @@
   // que ya limpió el servidor, para que la ficha de "suena ahora" y la lista
   // no se contradigan. Si no está, se enseña la etiqueta tal cual viene.
   function nombreLimpio(song) {
+    // El diccionario general va primero: cubre toda la rotación, mientras que
+    // la lista sólo llega a 40 puestos.
+    var n = NOMBRES[etiquetaDe(song)];
+    if (n) return { title: n.title, artist: n.artist, art: n.art || '' };
+
     var i = chartIndex(song);
-    // La carátula viene del mismo sitio que el nombre: la emisora sirve una
-    // imagen por defecto idéntica para todos los archivos, así que sólo vale
-    // la del catálogo.
     if (i !== null) return { title: CHART[i].title, artist: CHART[i].artist, art: CHART[i].art || '' };
+
     return {
       title: String((song && (song.title || song.text)) || ''),
       artist: String((song && song.artist) || ''),
@@ -748,6 +761,16 @@
 
   // "A continuación" sale de las mismas etiquetas sucias que todo lo demás:
   // se pasa por la limpieza para no contradecir a la lista y a la ficha.
+  // "A continuación" se pinta aparte para poder repetirlo cuando llega el
+  // diccionario: el primer sondeo suele adelantarse a /api/top40, y sin esto
+  // se quedaba con la etiqueta cruda hasta el sondeo siguiente.
+  function renderSiguiente() {
+    var caja = document.querySelector('[data-next]');
+    if (!caja) return;
+    caja.hidden = !state.siguiente;
+    if (state.siguiente) bind('next-track', songLine(state.siguiente));
+  }
+
   function songLine(song) {
     if (!song) return '';
     var n = nombreLimpio(song);
@@ -838,12 +861,8 @@
       }
     }
 
-    var next = data && data.playing_next && data.playing_next.song;
-    var nextBox = document.querySelector('[data-next]');
-    if (nextBox) {
-      nextBox.hidden = !next;
-      if (next) bind('next-track', songLine(next));
-    }
+    state.siguiente = (data && data.playing_next && data.playing_next.song) || null;
+    renderSiguiente();
 
     state.historial = (data && data.song_history) || null;
     renderHistory(state.historial);
@@ -929,6 +948,7 @@
         if (!data || !data.top || !data.top.length) throw new Error('lista vacía');
 
         CHART = data.top;
+        NOMBRES = data.nombres || Object.create(null);
         indexaEtiquetas();
 
         // Si la emisora ya había dicho qué suena, ahora se puede situar en la
@@ -942,6 +962,7 @@
           state.live.pos = state.liveIdx === null ? null : CHART[state.liveIdx].pos;
         }
         if (state.historial) renderHistory(state.historial);
+        renderSiguiente();
 
         var cierre = new Date(data.actualizado);
         bind('chart-date', isNaN(cierre.getTime())

@@ -97,7 +97,9 @@ var CORRECCIONES = Object.assign(Object.create(null), cargaGeneradas(), MANUALES
 // Los prefijos sueltos son a propósito: en este pool aparecen pegados
 // («raggamix», «antonydj», «lmix»), así que el límite de palabra sólo se exige
 // por la izquierda de la raíz cuando la palabra puede ir sola.
-var MARCAS = /([a-zá-ú]*mix|\bremix|\brmx|\bedit\b|\bintro\w*|\boutro\b|\bacapella\b|\bextended\b|\bversi[oó]n?\b|\bbootleg\b|\bmashup\b|[a-zá-ú]*dj\b|\bdj\s|\bbpm\b|\breload\b|\btransition\b)/i;
+// Incluye también las sobras de los rips de YouTube («official video», «720p»,
+// «4k»), que en esta biblioteca aparecen por todas partes.
+var MARCAS = /([a-zá-ú]*mix|\bremix|\brmx|\bedit\b|\bintro\w*|\boutro\b|\bacapella\b|\bextended\b|\bversi[oó]n?\b|\bbootleg\b|\bmashup\b|[a-zá-ú]*dj\b|\bdj\s|\bbpm\b|\breload\b|\btransition\b|\bofficial\b|\bvideo\b|\blyrics?\b|\bhd\b|\b4k\b|\bwidescreen\b|\b\d{3,4}p\b|\bremaster\w*\b)/i;
 
 // Partículas que no se capitalizan salvo al principio.
 var MINUSCULAS = /^(de|del|la|las|el|los|y|e|o|u|a|al|en|con|por|para|the|of|in|on|at|to|and|or|for|feat|ft|vs)$/;
@@ -121,6 +123,25 @@ function limpia(s) {
   t = t.replace(/^\s*\d{1,3}[a-z]?\s*[-–.]\s+/i, ' ');           // «1a - mix essential rock»
   t = t.replace(/[\s.\-_]*\b\d{2,3}\s*bpm\b\.?/gi, ' ');         // «… 114 BPM»
   t = t.replace(/[~_]+\d*\s*$/, ' ');                            // «127dav~1»
+
+  /* Sobras de descargas de YouTube que quedan sueltas, fuera de paréntesis:
+     «rock the casbah official video», «catch me im falling hd--16 9»,
+     «the sweetest taboo - official - 1985».
+
+     Se prueba sobre una copia: si quitarlas deja el título vacío es que esas
+     palabras ERAN el título —«Video», de India.Arie— y entonces se conserva
+     tal cual. Vale más un nombre con sobras que ninguno. */
+  var sinRip = t
+    .replace(/\bofficial\b/gi, ' ')
+    .replace(/\b(?:music\s+)?video\b/gi, ' ')
+    .replace(/\bhd\s*-{1,2}\s*\d+(?:\s+\d+)?\b/gi, ' ')
+    .replace(/\b(?:hd|4k|widescreen|\d{3,4}p)\b/gi, ' ')
+    .replace(/\s*[-–]\s*(?:[-–]\s*)+/g, ' - ')          // guiones que quedan huérfanos
+    .replace(/\s*[-–]\s*(?:19|20)\d{2}\s*$/, '')        // «… - 1985» al final
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s.,;:\-–—]+|[\s.,;:\-–—]+$/g, '');
+
+  if (sinRip) t = sinRip;
 
   t = t.replace(/\s+/g, ' ').replace(/^[\s.,;:\-–—]+|[\s.,;:\-–—]+$/g, '');
 
@@ -335,6 +356,29 @@ function posiciones(ranking) {
   return mapa;
 }
 
+/* Nombre presentable de cada etiqueta que ha sonado esta semana, entre en la
+   lista o no. Sin esto, la ficha de "suena ahora" —lo más visible de la
+   página— enseña la etiqueta cruda más de la mitad del tiempo, porque la
+   rotación tiene bastantes más canciones que puestos tiene el Top 40. */
+function mapaNombres(filas) {
+  var mapa = Object.create(null);
+
+  filas.forEach(function (fila) {
+    var cancion = (fila && fila.song) || fila;
+    var bruto = etiquetaCruda(cancion);
+    if (bruto in mapa) return;
+
+    var limpio = normaliza(cancion);
+    if (!limpio) return;                       // cortinilla o basura
+
+    var entrada = { title: limpio.titulo, artist: limpio.artista };
+    if (limpio.art) entrada.art = limpio.art;
+    mapa[bruto] = entrada;
+  });
+
+  return mapa;
+}
+
 /* ── Handler ────────────────────────────────────────────────────────────── */
 
 module.exports = async function (req, res) {
@@ -423,6 +467,7 @@ module.exports = async function (req, res) {
       // archivo de la emisora sólo llega a una semana atrás.
       ventanas: tandas.filter(function (t) { return t && t.length; }).length,
       emisiones: tandas[0].length,
+      nombres: mapaNombres(tandas[0]),
       top: top
     });
 
