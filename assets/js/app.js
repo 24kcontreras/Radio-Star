@@ -392,6 +392,18 @@
   // Si se cae la conexión mientras se escucha, se reintenta solo: un corte de
   // red no debería obligar a recargar la página.
   var reconnectAt = 0;
+  var reconexiones = [];        // marcas de tiempo de los últimos intentos
+
+  /* Si hay que reconectar muchas veces seguidas, el problema es la conexión o
+     el servidor, no un corte puntual. Insistir cada dos segundos entonces sólo
+     empeora las cosas y es lo que se oye como audio entrecortado: cada intento
+     tira el búfer. A partir del cuarto intento en un minuto se espera mucho
+     más entre uno y otro. */
+  function reconexionesRecientes() {
+    var ahora = Date.now();
+    reconexiones = reconexiones.filter(function (t) { return ahora - t < 60000; });
+    return reconexiones.length;
+  }
 
   // forzar = true salta la espera entre intentos y reconecta en el acto. Se usa
   // al volver de la pantalla bloqueada, donde hacer esperar al oyente dos
@@ -400,6 +412,8 @@
     if (!state.playing) return;
     if (!forzar && Date.now() - reconnectAt < 4000) return;   // un intento cada 4 s
 
+    var insistiendo = reconexionesRecientes() >= 3;
+    reconexiones.push(Date.now());
     reconnectAt = Date.now();
     state.status = 'error';
     render();
@@ -411,7 +425,7 @@
       var p = audio.play();
       if (p && p.catch) p.catch(function () {});
       marcaAvance();
-    }, forzar ? 0 : 2000);
+    }, forzar && !insistiendo ? 0 : (insistiendo ? 15000 : 2000));
   }
 
   /* ── Vigilancia de la emisión ──────────────────────────────────────────── */
@@ -421,11 +435,19 @@
      de wifi a datos. La única señal fiable es que currentTime deje de correr. */
   var ultimoTiempo = -1;
   var ultimoAvance = 0;
-  var SIN_AVANCE_MS = 12000;   // holgado: el búfer normal nunca tarda tanto
+  var intentoSuave = 0;
+
+  /* Márgenes deliberadamente amplios. Reconectar de más es peor que tardar:
+     tira el búfer y vuelve a empezar, que con mala cobertura empeora las
+     cosas y suena entrecortado. Un directo muerto sigue muerto dentro de
+     20 s; un rebuffer normal se resuelve mucho antes. */
+  var SIN_AVANCE_MS = 20000;
+  var REINTENTO_SUAVE_MS = 6000;
 
   function marcaAvance() {
     ultimoTiempo = -1;
     ultimoAvance = Date.now();
+    intentoSuave = 0;
   }
 
   function vigilaEmision() {
@@ -435,19 +457,41 @@
     if (audio.currentTime !== ultimoTiempo) {
       ultimoTiempo = audio.currentTime;
       ultimoAvance = Date.now();
+      intentoSuave = 0;
       return;
     }
-    if (ultimoAvance && Date.now() - ultimoAvance > SIN_AVANCE_MS) reconnect();
+
+    if (!ultimoAvance || Date.now() - ultimoAvance <= SIN_AVANCE_MS) return;
+
+    // Escalón 1, barato y silencioso: pedirle que siga. Conserva el búfer, así
+    // que si la emisión estaba viva el oyente no nota nada.
+    if (!intentoSuave) {
+      intentoSuave = Date.now();
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () {});
+      return;
+    }
+
+    // Escalón 2: ni con esas arranca. Ahora sí se tira la conexión.
+    if (Date.now() - intentoSuave > REINTENTO_SUAVE_MS) {
+      intentoSuave = 0;
+      reconnect();
+    }
   }
 
   /* Al desbloquear el teléfono los temporizadores han estado parados o muy
      ralentizados, así que el vigilante puede llevar minutos sin ejecutarse. Se
      comprueba el estado en el acto en lugar de esperar al siguiente tic. */
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState !== 'visible' || !state.playing) return;
-    // readyState < 3 es "no hay datos suficientes para seguir sonando".
-    if (audio && (audio.paused || audio.readyState < 3)) reconnect(true);
-    else marcaAvance();
+    if (document.visibilityState !== 'visible' || !state.playing || !audio) return;
+
+    /* Sólo se reconecta si está realmente muerto: parado, o sin ningún dato.
+       Antes bastaba readyState < 3, y eso incluye el 2 —búfer bajo pero
+       sonando—, que es un estado normal y pasajero: el resultado era cortar
+       el sonido cada vez que el oyente volvía a la pestaña. */
+    if (audio.paused || audio.readyState < 2) { reconnect(true); return; }
+
+    marcaAvance();   // vivo: se le da margen y ya decidirá el vigilante
   });
 
   /* ── Arranque automático ───────────────────────────────────────────────── */
