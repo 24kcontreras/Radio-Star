@@ -157,8 +157,43 @@ var CORRECCIONES = {
 ```
 
 La clave es artista y título ya limpios, en minúsculas y sin espacios ni signos.
-Arreglar esto de raíz pasa por corregir las etiquetas en la biblioteca de
-AzuraCast; la limpieza sólo tapa el problema de cara al oyente.
+
+#### El corrector automático
+
+Rellenar `MANUALES` a mano no escala. Para eso está `scripts/corrige-nombres.js`:
+lee el historial de emisión, coge cada etiqueta distinta, la busca en el
+catálogo de iTunes y escribe las coincidencias fiables en
+`api/correcciones.json`, que `api/top40.js` carga solo si existe.
+
+```sh
+AZURACAST_API_KEY=xxx node scripts/corrige-nombres.js
+AZURACAST_API_KEY=xxx node scripts/corrige-nombres.js --dry-run   # sin escribir
+```
+
+Esto es lo que resuelve las inversiones indetectables: prueba las dos
+asignaciones posibles (tal cual y con artista y título intercambiados) y se
+queda con la que más se parece a la ficha del catálogo. Así
+`"128 blue" / "eiffel 65 [ antonydj]"` acaba siendo *Blue (Da Ba Dee)* de
+*Eiffel 65*, que por texto solo era imposible de deducir.
+
+**Lo que no supera el umbral de confianza no se aplica**: va a
+`scripts/revisar.json` con la etiqueta original, la propuesta y su puntuación,
+para que decidas tú. Es deliberado — una búsqueda difusa sobre texto sucio
+devuelve resultados equivocados con mucho aplomo, y atribuir una canción al
+artista que no es resulta peor que dejar el nombre feo.
+
+Opciones: `--umbral 0.9` (más estricto), `--semanas 12` (mirar más atrás),
+`--pais ES` (tienda de iTunes; por defecto `CL`, y esto importa: la tienda de
+EE. UU. no encuentra «Better Off Alone» de Alice Deejay y la chilena sí),
+`--pausa 800` (ms entre consultas).
+
+Medido sobre doce etiquetas reales de la emisora: nueve corregidas, ninguna mal
+atribuida, y tres intactas —un megamix de DJ, un nombre de archivo roto y una
+canción que no está en el catálogo—. Esas tres no tienen arreglo automático.
+
+Arreglarlo de raíz pasa por corregir las etiquetas en la biblioteca de
+AzuraCast; tanto la limpieza como el corrector sólo tapan el problema de cara
+al oyente.
 
 #### Coste
 
@@ -192,6 +227,13 @@ figura en el Top 40, se reutiliza el nombre ya limpio que devolvió
 `/api/top40` —así la ficha y la lista no se contradicen— y la fila
 correspondiente se marca en rojo.
 
+## Scripts
+
+```
+scripts/corrige-nombres.js   Corrige nombres contra el catálogo de iTunes
+scripts/revisar.json         Lo generado que no llegó al umbral (no se aplica)
+```
+
 ## Notas de implementación
 
 - **Responsive por CSS, no por JavaScript.** La maqueta cambiaba de marcado
@@ -207,6 +249,22 @@ correspondiente se marca en rojo.
   inyectar marcado.
 - **Sin peticiones externas.** Las fuentes van autoalojadas en `assets/fonts/`,
   así que la página no depende de Google Fonts ni de ningún CDN.
+- **Reproducción automática: intento, no promesa.** `data-autoplay` en el
+  `<audio>` hace que la radio intente sonar al entrar. Los navegadores
+  bloquean el audio automático salvo que el visitante ya tenga historial en el
+  dominio, y en móvil lo bloquean casi siempre. Cuando lo deniegan **no se
+  toca el estado**: el botón sigue diciendo "reproducir", que es la verdad, y
+  queda armado el arranque al primer toque en cualquier parte. Fingir que
+  suena obligaría al oyente a pulsar dos veces. Quita `data-autoplay` para
+  volver al arranque sólo con el botón.
+- **La emisión se vigila, no se supone.** Un directo que se corta muchas veces
+  no lanza `error` ni `ended`: el `<audio>` simplemente deja de avanzar. Pasa
+  sobre todo con el móvil bloqueado, cuando el sistema suspende la red o se
+  salta de wifi a datos. Por eso `vigilaEmision()` comprueba cada segundo que
+  `currentTime` sigue corriendo y reconecta si lleva 12 s parado, y un
+  `visibilitychange` fuerza la comprobación al desbloquear en lugar de esperar
+  al siguiente tic. No se escucha `stalled`: salta también en pausas normales
+  del búfer y cortaría el sonido sin motivo.
 - **Accesibilidad.** Los tres botones de reproducción comparten estado,
   el *me gusta* expone `aria-pressed`, la navegación marca la sección activa y
   se respeta `prefers-reduced-motion`.

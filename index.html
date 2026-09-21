@@ -20,8 +20,11 @@
 <body>
 
 <!-- El stream se configura en data-stream, la canción en directo en
-     data-nowplaying (API de AzuraCast) y el vídeo en data-video (HLS/MP4). -->
-<audio id="rs-audio" preload="none" data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"
+     data-nowplaying (API de AzuraCast) y el vídeo en data-video (HLS/MP4).
+     data-autoplay intenta arrancar al entrar; el navegador puede denegarlo
+     (en móvil casi siempre), y entonces arranca al primer toque. Quítalo
+     para volver al arranque sólo con el botón. -->
+<audio id="rs-audio" preload="none" data-autoplay data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"
        data-nowplaying="https://radio.radiobendicion.cl/api/nowplaying/radio-star-online"></audio>
 
 <!-- ═══ Cabecera ═══════════════════════════════════════════════════════════ -->
@@ -324,7 +327,9 @@
 
     <div class="hosts-grid">
       <div class="host">
-        <div class="host-media grayscale" role="img" aria-label="Retrato de Tatán"></div>
+        <div class="host-media grayscale">
+          <img src="assets/img/locutor-tatan.webp" alt="Retrato de Tatán" width="900" height="1200" loading="lazy" decoding="async">
+        </div>
         <div>
           <h3>Tatán</h3>
           <div class="host-show">Partiendo la semana</div>
@@ -527,7 +532,7 @@
   </div>
 </div>
 
-<script src="assets/js/app.js?v=4"></script>
+<script src="assets/js/app.js?v=6"></script>
 <script src="assets/js/noticias.js?v=1" defer></script>
 </body>
 </html>

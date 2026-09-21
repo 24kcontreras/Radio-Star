@@ -335,7 +335,17 @@
     if (state.playing) {
       state.status = 'loading';
       var p = audio.play();
-      if (p && p.catch) p.catch(function () { /* autoplay bloqueado */ });
+      if (p && p.catch) p.catch(function () {
+        // El navegador puede negarse —la reproducción con sonido sin permiso
+        // está bloqueada—. Hay que volver a "en pausa": si no, el botón
+        // enseñaría "detener" sin que suene nada y habría que pulsarlo dos
+        // veces para arrancar.
+        if (!state.playing) return;
+        state.playing = false;
+        state.status = 'idle';
+        esperaGesto();
+        render();
+      });
     } else {
       state.status = 'idle';
       // Un directo no se pausa: se corta y se vuelve a pedir al reanudar, así
@@ -356,18 +366,38 @@
       state.status = 'loading';
       render();
     });
-    // Sólo se reconecta ante un fallo real o un corte del servidor: 'stalled'
-    // salta también en pausas normales del búfer y cortaría el sonido.
-    audio.addEventListener('error', reconnect);
-    audio.addEventListener('ended', reconnect);
+    // 'stalled' no se escucha: salta también en pausas normales del búfer y
+    // cortaría el sonido sin motivo. Los cortes silenciosos —que no lanzan
+    // ningún evento— los detecta vigilaEmision() mirando el reloj.
+    // Van envueltos a propósito: como listener directo, el objeto Event
+    // llegaría como primer argumento y activaría la reconexión forzada.
+    audio.addEventListener('error', function () { reconnect(); });
+    audio.addEventListener('ended', function () { reconnect(); });
+
+    // El sistema puede pausar el elemento por su cuenta: una llamada entrante,
+    // otra app tomando el audio, o el navegador liberando recursos. Si para
+    // nosotros seguíamos emitiendo, se reanuda.
+    audio.addEventListener('pause', function () {
+      if (!state.playing) return;
+      setTimeout(function () {
+        if (state.playing && audio.paused) {
+          var p = audio.play();
+          if (p && p.catch) p.catch(function () {});
+        }
+      }, 300);
+    });
   }
 
   // Si se cae la conexión mientras se escucha, se reintenta solo: un corte de
   // red no debería obligar a recargar la página.
   var reconnectAt = 0;
-  function reconnect() {
+
+  // forzar = true salta la espera entre intentos y reconecta en el acto. Se usa
+  // al volver de la pantalla bloqueada, donde hacer esperar al oyente dos
+  // segundos más no tiene ningún sentido.
+  function reconnect(forzar) {
     if (!state.playing) return;
-    if (Date.now() - reconnectAt < 4000) return;   // un intento cada 4 s
+    if (!forzar && Date.now() - reconnectAt < 4000) return;   // un intento cada 4 s
 
     reconnectAt = Date.now();
     state.status = 'error';
@@ -379,13 +409,107 @@
       audio.src = audio.dataset.stream + '?_=' + Date.now();
       var p = audio.play();
       if (p && p.catch) p.catch(function () {});
-    }, 2000);
+      marcaAvance();
+    }, forzar ? 0 : 2000);
+  }
+
+  /* ── Vigilancia de la emisión ──────────────────────────────────────────── */
+  /* Un directo que se corta muchas veces no avisa: el <audio> no lanza ni
+     'error' ni 'ended', simplemente deja de avanzar y se queda así. Es lo que
+     ocurre con el móvil bloqueado cuando el sistema suspende la red o se pasa
+     de wifi a datos. La única señal fiable es que currentTime deje de correr. */
+  var ultimoTiempo = -1;
+  var ultimoAvance = 0;
+  var SIN_AVANCE_MS = 12000;   // holgado: el búfer normal nunca tarda tanto
+
+  function marcaAvance() {
+    ultimoTiempo = -1;
+    ultimoAvance = Date.now();
+  }
+
+  function vigilaEmision() {
+    if (!audio || !audio.dataset.stream || !state.playing) return;
+    if (audio.paused) return;              // de eso se encarga el listener de 'pause'
+
+    if (audio.currentTime !== ultimoTiempo) {
+      ultimoTiempo = audio.currentTime;
+      ultimoAvance = Date.now();
+      return;
+    }
+    if (ultimoAvance && Date.now() - ultimoAvance > SIN_AVANCE_MS) reconnect();
+  }
+
+  /* Al desbloquear el teléfono los temporizadores han estado parados o muy
+     ralentizados, así que el vigilante puede llevar minutos sin ejecutarse. Se
+     comprueba el estado en el acto en lugar de esperar al siguiente tic. */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible' || !state.playing) return;
+    // readyState < 3 es "no hay datos suficientes para seguir sonando".
+    if (audio && (audio.paused || audio.readyState < 3)) reconnect(true);
+    else marcaAvance();
+  });
+
+  /* ── Arranque automático ───────────────────────────────────────────────── */
+  /* La emisora quiere que suene nada más entrar. Los navegadores bloquean la
+     reproducción automática con sonido salvo que el visitante ya tenga
+     historial en el dominio, y en móvil la bloquean casi siempre, así que esto
+     es un intento, no una garantía.
+
+     Cuando lo deniegan no se toca el estado —el botón sigue diciendo
+     "reproducir", que es la verdad— y se queda armado el arranque al primer
+     toque en cualquier parte de la página, que es lo más cerca de "suena al
+     entrar" que permite la web. */
+  var gestoArmado = false;
+
+  function esperaGesto() {
+    if (gestoArmado || !audio || !audio.dataset.stream) return;
+    gestoArmado = true;
+
+    function arranca(e) {
+      // Si el toque fue sobre un control, se desarma y se deja que lo maneje
+      // quien corresponde: si no, el botón de play arrancaría aquí y su propio
+      // manejador lo pararía acto seguido.
+      var enControl = e.target && e.target.closest && e.target.closest('[data-action]');
+      document.removeEventListener('pointerdown', arranca, true);
+      gestoArmado = false;
+      if (!enControl && !state.playing) setPlaying(true);
+    }
+
+    document.addEventListener('pointerdown', arranca, true);
+  }
+
+  function intentaAutoarranque() {
+    if (!audio || !audio.dataset.stream) return;
+    if (audio.dataset.autoplay === undefined) return;   // se activa desde el HTML
+
+    if (!audio.src) audio.src = audio.dataset.stream;
+    var p = audio.play();
+    if (!p || !p.then) { esperaGesto(); return; }
+
+    p.then(function () {
+      // Concedido: se refleja sin haber prometido nada antes de tiempo.
+      state.playing = true;
+      marcaAvance();
+      render();
+      if ('mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'playing'; } catch (e) { /* sin soporte */ }
+      }
+    }).catch(function () {
+      esperaGesto();
+    });
   }
 
   function setPlaying(on) {
     state.playing = on;
+    marcaAvance();               // el vigilante parte de cero en cada cambio
     syncAudio();
     render();
+    // El sistema operativo necesita saberlo para mantener vivos los mandos de
+    // la pantalla de bloqueo; sin esto se quedan desincronizados.
+    if ('mediaSession' in navigator) {
+      try { navigator.mediaSession.playbackState = on ? 'playing' : 'paused'; }
+      catch (e) { /* navegador sin soporte completo */ }
+    }
   }
 
   function selectTrack(i) {
@@ -565,6 +689,10 @@
       state.secs += 1;
       bind('elapsed', elapsedText());
     }
+    // Comprueba que la emisión sigue viva. Va aquí y no en su propio
+    // temporizador porque con la pantalla apagada el navegador ralentiza los
+    // temporizadores, y cuantos menos haya, mejor se porta.
+    vigilaEmision();
     // El progreso de la canción avanza aunque no se esté escuchando: la
     // emisora sigue emitiendo al otro lado.
     renderProgress();
@@ -827,5 +955,6 @@
   render();
   onScroll();
   cargaChart();
+  intentaAutoarranque();
   if (NP_URL) pollNowPlaying();
 })();

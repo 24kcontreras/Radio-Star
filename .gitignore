@@ -1,0 +1,11 @@
+# Caché local del corrector de nombres: sólo evita repetir consultas al
+# catálogo entre ejecuciones. Se regenera solo y no aporta nada al repositorio.
+scripts/.cache-busquedas.json
+
+# Variables de entorno (AZURACAST_API_KEY). Nunca deben acabar en el repo.
+.env
+.env.*
+!.env.example
+
+.vercel/
+node_modules/

@@ -37,6 +37,24 @@ var MAX_PAGINAS = 40;              // tope de seguridad: 20.000 emisiones por ve
 // una prueba del locutor o un archivo que se coló; no es rotación.
 var MIN_EMISIONES = 2;
 
+/* Cuñas, separadores y autopromos de la emisora. Suenan muchísimo más que
+   cualquier canción —los separadores iban 56 y 28 pases frente a los 24 del
+   tema más puesto—, así que sin esto copan la lista entera y el Top 40 deja
+   de hablar de música.
+
+   «^radio star» sólo descarta lo que EMPIEZA por el nombre de la emisora
+   («Radio Star en Ingles»); si se buscara en cualquier posición se cargaría
+   «Video Killed the Radio Star», que es una canción de verdad.
+
+   Se compara sin acentos y por eso el patrón va sin ellos: la «ñ» de «cuña»
+   llega unas veces compuesta y otras descompuesta (n + tilde) según el
+   archivo, y con la forma descompuesta la cortinilla se colaba en la lista. */
+var CORTINILLAS = /(\bseparador\w*\b|\bcuna\b|\bjingle\b|\bpromo(?:cion)?\b|\bbarrido\b|\brafaga\b|\bcareta\b|\bsweeper\b|\bbumper\b|\bmarca\s*poder\b|\bspot\b|^\s*radio\s*star\b)/i;
+
+function esCortinilla(texto) {
+  return CORTINILLAS.test(sinAcentos(String(texto || '')).toLowerCase());
+}
+
 // El CDN guarda el resultado una hora: por muchas visitas que haya, el
 // historial de la emisora se lee como mucho 24 veces al día.
 var CACHE_SEGUNDOS = 3600;
@@ -55,9 +73,25 @@ var CACHE_NAVEGADOR = 300;         // 5 min
    Si algún caso concreto se resiste, añádelo a CORRECCIONES: es un mapa de
    «clave normalizada» → { artist, title } que se aplica al final.            */
 
-var CORRECCIONES = {
-  // 'eiffel65|blue': { artist: 'Eiffel 65', title: 'Blue' },
+// Correcciones escritas a mano. Ganan siempre sobre las automáticas.
+var MANUALES = {
+  // 'blue|eiffel65': { artist: 'Eiffel 65', title: 'Blue (Da Ba Dee)' },
 };
+
+/* Correcciones averiguadas por scripts/corrige-nombres.js cotejando cada
+   etiqueta contra un catálogo musical. El archivo puede no existir —la función
+   tiene que seguir funcionando sin él— y por eso el require va protegido.
+   Se usa require y no readFileSync para que Vercel lo incluya en el paquete. */
+function cargaGeneradas() {
+  try {
+    var datos = require('./correcciones.json');
+    return (datos && datos.correcciones) || {};
+  } catch (e) {
+    return {};                       // sin archivo, sólo valen las manuales
+  }
+}
+
+var CORRECCIONES = Object.assign(Object.create(null), cargaGeneradas(), MANUALES);
 
 // Palabras que delatan un crédito de remezcla en lugar del nombre de la canción.
 // Los prefijos sueltos son a propósito: en este pool aparecen pegados
@@ -159,10 +193,18 @@ function normaliza(cancion) {
 
   if (!esUtil(titulo)) return null;
 
-  var corregido = CORRECCIONES[clave(artista, titulo)];
-  if (corregido) return { artista: corregido.artist, titulo: corregido.title };
+  // Se comprueba sobre el texto original: la limpieza quita paréntesis y
+  // corchetes, y alguna cortinilla se identifica justo por lo que va ahí.
+  if (esCortinilla(tituloBruto) || esCortinilla(titulo)) return null;
 
-  return { artista: capitaliza(artista), titulo: capitaliza(titulo) };
+  // La clave se calcula ANTES de corregir: es con la que el script de
+  // correcciones indexa el archivo, y así sigue encontrando la entrada
+  // aunque el nombre corregido sea muy distinto del original.
+  var k = clave(artista, titulo);
+  var corregido = CORRECCIONES[k];
+  if (corregido) return { artista: corregido.artist, titulo: corregido.title, clave: k };
+
+  return { artista: capitaliza(artista), titulo: capitaliza(titulo), clave: k };
 }
 
 /* ── Historial de la emisora ────────────────────────────────────────────── */
@@ -367,7 +409,10 @@ module.exports = async function (req, res) {
       actualizado: new Date(ahora).toISOString(),
       desde: new Date(ahora - SEMANA_MS).toISOString(),
       hasta: new Date(ahora).toISOString(),
-      ventanas: tandas.filter(Boolean).length,
+      // Ventanas con datos, no simplemente leídas: una semana sin historial
+      // devuelve un array vacío, y contarla como buena ocultaba que el
+      // archivo de la emisora sólo llega a una semana atrás.
+      ventanas: tandas.filter(function (t) { return t && t.length; }).length,
       emisiones: tandas[0].length,
       top: top
     });
