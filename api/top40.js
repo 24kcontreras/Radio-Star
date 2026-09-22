@@ -335,7 +335,9 @@ function rankea(filas) {
     if (cuando >= entrada.last) {
       entrada.last = cuando;
       if (cancion && cancion.album) entrada.album = String(cancion.album);
-      if (!limpio.art && cancion && cancion.art) entrada.art = String(cancion.art);
+      // La carátula de la emisora no se usa: comprobado que sirve la misma
+      // imagen por defecto para toda la rotación. Sin arte de catálogo se
+      // prefiere dejar el hueco gris del diseño antes que una nota genérica.
     }
   });
 

@@ -78,9 +78,16 @@
   // Igual que bind, pero para las imágenes (la carátula aparece en la ficha y
   // en la barra fija). Sin URL se conserva la que ya tuviera el HTML.
   function bindSrc(name, url) {
-    if (!url) return;
     $all('[data-bind="' + name + '"]').forEach(function (el) {
+      if (!url) {
+        // Sin imagen se esconde y queda el fondo del contenedor. Conservar la
+        // anterior sería peor: enseñaría la portada de la canción pasada.
+        el.hidden = true;
+        el.removeAttribute('src');
+        return;
+      }
       if (el.getAttribute('src') !== url) el.setAttribute('src', url);
+      el.hidden = false;
     });
   }
 
@@ -927,7 +934,14 @@
       title: nombre.title || 'En emisión',
       artist: nombre.artist,
       album: song.album || '',
-      art: nombre.art || song.art || '',
+      /* Sólo vale la carátula del catálogo. La que manda AzuraCast se descartó
+         a propósito: comprobado que sirve LA MISMA imagen por defecto para las
+         381 canciones de la rotación, así que no informa de nada y además es
+         una petición extra en cada cambio de tema. Sin carátula se deja el
+         hueco gris del diseño, como en las fotos que faltan.
+         Si algún día incrustáis arte en los archivos, basta con volver a
+         poner «|| song.art» aquí. */
+      art: nombre.art || '',
       pos: idx === null ? null : CHART[idx].pos
     };
 
