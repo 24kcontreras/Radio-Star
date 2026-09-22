@@ -934,14 +934,12 @@
       title: nombre.title || 'En emisión',
       artist: nombre.artist,
       album: song.album || '',
-      /* Sólo vale la carátula del catálogo. La que manda AzuraCast se descartó
-         a propósito: comprobado que sirve LA MISMA imagen por defecto para las
-         381 canciones de la rotación, así que no informa de nada y además es
-         una petición extra en cada cambio de tema. Sin carátula se deja el
-         hueco gris del diseño, como en las fotos que faltan.
-         Si algún día incrustáis arte en los archivos, basta con volver a
-         poner «|| song.art» aquí. */
-      art: nombre.art || '',
+      /* Manda la carátula del propio archivo: es la que ha puesto la emisora
+         y por tanto la autoritativa. La del catálogo queda de reserva para los
+         archivos que todavía no llevan la suya incrustada.
+         (Estuvo desactivada mientras AzuraCast servía la misma imagen por
+         defecto para toda la rotación; ya no es el caso.) */
+      art: song.art || nombre.art || '',
       pos: idx === null ? null : CHART[idx].pos
     };
 
