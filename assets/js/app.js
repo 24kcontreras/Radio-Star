@@ -17,6 +17,8 @@
   var CARGANDO = 'Contando las emisiones de la semana…';
   var SIN_LISTA = 'El Top 40 no está disponible ahora mismo. Vuelve a intentarlo en un rato.';
   var chartAviso = CARGANDO;   // lo que se enseña mientras la tabla está vacía
+  // Lo que se anuncia mientras hay alguien al aire y el emisor no manda título.
+  var EN_DIRECTO = 'Transmitiendo desde nuestro estudio';
   var VOL_STEPS = 10;
 
   /* ── Preferencias guardadas ────────────────────────────────────────────── */
@@ -795,6 +797,13 @@
   // que ya limpió el servidor, para que la ficha de "suena ahora" y la lista
   // no se contradigan. Si no está, se enseña la etiqueta tal cual viene.
   function nombreLimpio(song) {
+    // Sin etiquetas no hay nada que reconocer, y la clave vacía puede casar
+    // con cualquier archivo mal etiquetado del catálogo: se devuelve lo que
+    // venga tal cual antes de tocar el diccionario.
+    if (!song || (!song.title && !song.artist)) {
+      return { title: String((song && song.text) || ''), artist: '', art: '' };
+    }
+
     // El diccionario general va primero: cubre toda la rotación, mientras que
     // la lista sólo llega a 40 puestos.
     var n = NOMBRES[etiquetaDe(song)];
@@ -897,6 +906,16 @@
 
     state.online = data ? data.is_online !== false : false;
 
+    /* Cuando un locutor entra al aire (ZaraRadio y cualquier otro emisor),
+       AzuraCast deja de programar canciones pero conserva en now_playing la
+       última que puso el AutoDJ: se queda ahí congelada —remaining a cero—
+       hasta que el emisor mande su propia etiqueta. Creérsela sería anunciar,
+       con carátula y todo, una canción que terminó hace rato. La señal de que
+       es un resto y no lo que suena: empezó antes de que arrancara el directo. */
+    var enVivo = !!live.is_live;
+    var restoDelAutoDJ = enVivo && !!live.broadcast_start && !!np &&
+      !!np.played_at && np.played_at < live.broadcast_start;
+
     if (data && data.listeners) {
       bind('listeners', Number(data.listeners.current || 0).toLocaleString('es-CL'));
     }
@@ -912,11 +931,35 @@
       }
     }
 
-    state.siguiente = (data && data.playing_next && data.playing_next.song) || null;
+    // "A continuación" sale de la cola del AutoDJ, que mientras hay alguien
+    // pinchando en directo no va a sonar: prometerla sería mentir.
+    state.siguiente = (!enVivo && data && data.playing_next && data.playing_next.song) || null;
     renderSiguiente();
 
     state.historial = (data && data.song_history) || null;
     renderHistory(state.historial);
+
+    // Directo sin etiquetas propias: se anuncia el directo, no el resto de la
+    // rotación. En cuanto el emisor mande su título, AzuraCast abre una entrada
+    // nueva —ya posterior a broadcast_start— y esto deja de saltar solo.
+    if (restoDelAutoDJ) {
+      state.np = null;          // la barra de progreso no mediría nada real
+      state.liveSong = null;
+      state.live = {
+        title: EN_DIRECTO,
+        artist: '',
+        album: '',
+        art: live.art || '',
+        pos: null
+      };
+      if (state.liveIdx !== null) {
+        state.liveIdx = null;   // ninguna fila del Top 40 está sonando
+        renderChart();
+      }
+      updateMediaSession(state.live);
+      render();
+      return NP_EVERY;
+    }
 
     if (!song) { render(); return NP_EVERY; }
 
