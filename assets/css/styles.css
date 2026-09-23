@@ -488,6 +488,21 @@ figure { margin: 0; }
 .stats .n { font-family: var(--font-heading); font-weight: 800; font-size: 19px; }
 .stats .l { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-700); }
 
+/* El contador de oyentes se mueve solo: cada cambio entra con un pequeño
+   desplazamiento —hacia arriba si sube, hacia abajo si baja— para que se
+   note el vaivén sin robarle atención a lo que suena. */
+.stats .n { transform-origin: left center; }
+.stats .n.is-up   { animation: oyentes-sube .45s cubic-bezier(.22,1,.36,1); }
+.stats .n.is-down { animation: oyentes-baja .45s cubic-bezier(.22,1,.36,1); }
+@keyframes oyentes-sube {
+  from { transform: translateY(5px);  opacity: .35; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes oyentes-baja {
+  from { transform: translateY(-5px); opacity: .35; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 /* ── Top 40 ─────────────────────────────────────────────────────────────── */
 .chart-scroll { overflow-x: auto; }
 .chart-table { min-width: 520px; }

@@ -916,9 +916,10 @@
     var restoDelAutoDJ = enVivo && !!live.broadcast_start && !!np &&
       !!np.played_at && np.played_at < live.broadcast_start;
 
-    if (data && data.listeners) {
-      bind('listeners', Number(data.listeners.current || 0).toLocaleString('es-CL'));
-    }
+    // El contador que se enseña es simulado (ver «Oyentes»). La audiencia
+    // real se guarda aquí: es el número que habría que pintar para volver
+    // al dato verdadero.
+    if (data && data.listeners) state.oyentesReales = Number(data.listeners.current || 0);
 
     // Locutor al aire: si hay alguien pinchando en directo manda su nombre;
     // si no, se conserva la parrilla escrita en el HTML.
@@ -1013,6 +1014,108 @@
       });
   }
 
+  /* ── Oyentes ───────────────────────────────────────────────────────────── */
+  /* Cifra simulada, a petición de la emisora: NO es la audiencia real —esa
+     llega en state.oyentesReales y no se publica— sino un número que sigue
+     la curva de abajo según la hora del día y va subiendo y bajando de uno
+     en uno, como si el público entrara y saliera.
+     Para volver al dato verdadero: borrar arrancaOyentes() del arranque y
+     pintar state.oyentesReales desde applyNowPlaying. */
+
+  /* Oyentes típicos en cada hora, en HORA DE CHILE. El índice es la hora.
+     Estos son los números que hay que tocar para ajustar la curva a la
+     parrilla: sube las franjas donde tengas tus programas fuertes. */
+  var OYENTES_CURVA = [
+    /* 00 */ 35, /* 01 */ 25, /* 02 */ 18, /* 03 */ 14,
+    /* 04 */ 12, /* 05 */ 15, /* 06 */ 30, /* 07 */ 65,
+    /* 08 */ 85, /* 09 */ 80, /* 10 */ 70, /* 11 */ 65,
+    /* 12 */ 70, /* 13 */ 75, /* 14 */ 70, /* 15 */ 65,
+    /* 16 */ 65, /* 17 */ 70, /* 18 */ 85, /* 19 */ 90,
+    /* 20 */ 80, /* 21 */ 70, /* 22 */ 55, /* 23 */ 45
+  ];
+
+  var OYENTES_VAIVEN = 0.18;           // cuánto oscila alrededor de su hora
+  var OYENTES_CADENCIA = [2500, 7000]; // ms entre un movimiento y el siguiente
+  var oyentes = 0;
+
+  function entre(a, b) { return a + Math.random() * (b - a); }
+
+  /* La curva va por la hora de Chile, no por la del visitante: la audiencia
+     está aquí, así que quien abra la página desde otro huso tiene que ver el
+     público que hay en Chile a esa hora, no el de su reloj. Intl resuelve
+     solo el cambio de horario de verano. */
+  function relojChile() {
+    try {
+      var partes = new Intl.DateTimeFormat('es-CL', {
+        timeZone: 'America/Santiago', hour: 'numeric', minute: 'numeric', hour12: false
+      }).formatToParts(new Date());
+      var h = 0, m = 0;
+      partes.forEach(function (p) {
+        if (p.type === 'hour') h = Number(p.value) % 24;    // algunos navegadores dan 24
+        if (p.type === 'minute') m = Number(p.value);
+      });
+      return h + m / 60;
+    } catch (e) {
+      var d = new Date();                                   // sin soporte de zonas
+      return d.getHours() + d.getMinutes() / 60;
+    }
+  }
+
+  // Oyentes esperados ahora mismo, interpolando entre horas para que al dar
+  // la hora el número no pegue un salto delatador.
+  // El medio punto es importante: el número de la tabla es el de la MITAD de
+  // su franja (07 vale a las 07:30). Interpolando de HH:00 a HH+1:00 lo que se
+  // vería durante la hora sería el promedio con la siguiente, y las franjas en
+  // cuesta —el amanecer sobre todo— acababan enseñando bastante más de lo que
+  // dice la curva.
+  function centroOyentes() {
+    var t = relojChile() - 0.5;
+    if (t < 0) t += 24;
+    var h = Math.floor(t) % 24;
+    var avance = t - Math.floor(t);
+    return OYENTES_CURVA[h] + (OYENTES_CURVA[(h + 1) % 24] - OYENTES_CURVA[h]) * avance;
+  }
+
+  function pintaOyentes(n, dir) {
+    $all('[data-bind="listeners"]').forEach(function (el) {
+      el.textContent = Number(n).toLocaleString('es-CL');
+      if (!dir) return;
+      el.classList.remove('is-up', 'is-down');
+      void el.offsetWidth;   // fuerza el reinicio: sin esto no se repite la animación
+      el.classList.add(dir > 0 ? 'is-up' : 'is-down');
+    });
+  }
+
+  function tickOyentes() {
+    var centro = centroOyentes();
+    // Suelo de 3 para que en la madrugada, con la curva muy baja, el contador
+    // no se quede completamente quieto.
+    var margen = Math.max(3, centro * OYENTES_VAIVEN);
+    var min = Math.max(1, Math.round(centro - margen));
+    var max = Math.round(centro + margen);
+
+    // Sesgo hacia la cifra que toca a esta hora. Hace dos cosas: evita que se
+    // pegue a los topes, y arrastra el número cuando la curva cambia de franja.
+    var tiron = (centro - oyentes) / Math.max(max - min, 1);
+    var dir = Math.random() < 0.5 + tiron ? 1 : -1;
+    var paso = Math.random() < 0.82 ? 1 : 2;   // casi siempre de uno en uno
+    var next = Math.min(max, Math.max(min, oyentes + dir * paso));
+    if (next !== oyentes) {
+      oyentes = next;
+      pintaOyentes(oyentes, dir);
+    }
+    setTimeout(tickOyentes, entre(OYENTES_CADENCIA[0], OYENTES_CADENCIA[1]));
+  }
+
+  function arrancaOyentes() {
+    // Se entra ya dentro de la franja horaria que toca, un poco descentrado
+    // para que dos visitantes no vean exactamente el mismo número.
+    var centro = centroOyentes();
+    oyentes = Math.max(1, Math.round(centro + entre(-1, 1) * centro * OYENTES_VAIVEN * 0.6));
+    pintaOyentes(oyentes);
+    setTimeout(tickOyentes, entre(1200, 2600));
+  }
+
   /* ── Arranque ──────────────────────────────────────────────────────────── */
   // La parrilla escrita a mano se guarda para poder volver a ella cuando
   // termine una emisión en directo.
@@ -1082,6 +1185,7 @@
   renderChart();
   render();
   onScroll();
+  arrancaOyentes();
   cargaChart();
   intentaAutoarranque();
   if (NP_URL) pollNowPlaying();
