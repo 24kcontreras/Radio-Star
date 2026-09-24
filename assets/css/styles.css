@@ -341,6 +341,31 @@ figure { margin: 0; }
 .nav-mobile a:last-child { border-right: 0; }
 .nav-mobile a.is-active { color: var(--color-accent); }
 
+/* ── Bienvenida ─────────────────────────────────────────────────────────── */
+/* Por encima de todo: la barra fija llega a z-index 70 y la cabecera a 60. */
+.bienvenida {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; align-content: center; justify-items: center;
+  gap: clamp(14px, 2vw, 22px); padding: var(--gutter);
+  background: #0d0c0c;
+}
+/* height:auto es imprescindible: el <video> lleva width/height en el HTML (para
+   reservar sitio antes de cargar) y esos atributos ganan a aspect-ratio si la
+   altura no se libera. Sin esto, en móvil salía de 338×576 en vez de 338×190. */
+.bienvenida-video {
+  width: min(100%, 900px); height: auto; aspect-ratio: 16 / 9;
+  background: #000; object-fit: contain;
+}
+.bienvenida-acciones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.bienvenida-acciones .btn-secondary { border-color: rgba(255,255,255,.45); color: #fff; }
+.bienvenida-acciones .btn-secondary:hover { background: rgba(255,255,255,.14); color: #fff; }
+.bienvenida :focus-visible { outline-color: #fff; }
+
+.bienvenida.is-saliendo { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+
+/* Mientras la cortinilla tapa la pantalla, la página de detrás no se desplaza. */
+.sin-scroll { overflow: hidden; }
+
 /* ── Ranking en vídeo + encuesta ────────────────────────────────────────── */
 /* Banda que abre el hero: el vídeo vertical a la izquierda y, a la derecha,
    el panel que va cambiando (invitación → encuesta → resultados). */

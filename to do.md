@@ -46,6 +46,9 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - [ ] `assets/img/top.mp4` — el vídeo del ranking, 12 MB (sin rastrear).
 - [ ] `assets/img/top-poster.jpg` — portada del vídeo (sin rastrear).
 - [ ] `assets/img/estudio.webp` — carátula del directo (sin rastrear).
+- [ ] `assets/img/entrada.mp4` + `entrada-poster.jpg` — cortinilla de bienvenida.
+      Es copia de `video entrada.mp4` con nombre sin espacios; el original se
+      puede dejar fuera del repo igual que `portada estudio.jpg`.
 - [ ] Decidir si se commitea también `assets/img/portada estudio.jpg`, el
       original de 2,2 MB. Tiene un espacio en el nombre y un marco de maqueta
       alrededor; `estudio.webp` ya sale de él recortado y optimizado. Yo lo
@@ -129,6 +132,14 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
       maqueta. La carátula del estudio ya va en color como excepción, porque
       lleva el logotipo en amarillo. Si prefieren color en todo, es quitar la
       clase.
+- [ ] **¿La cortinilla debe verse con «reducir movimiento» activado?** Ahora se
+      salta, por accesibilidad: es una animación a pantalla completa. **Tu Chrome
+      lo tiene activado**, así que al probar la web no la verás —no está rota—.
+      Si la emisora prefiere que salga siempre, es quitar una línea de
+      `tocaBienvenida()` en `assets/js/app.js`.
+- [ ] **¿Una vez por visita o con menos frecuencia?** Ahora sale una vez por
+      sesión. Si resulta pesada, se puede pasar a una vez al día cambiando
+      `sessionStorage` por `localStorage` con fecha.
 - [ ] **Texto de la carátula del estudio.** `estudio.webp` dice «MÚSICA DE LOS
       80s». Si el directo no siempre es de los 80, conviene una versión más
       neutra, porque esa imagen sale en **cualquier** emisión desde el estudio.
@@ -151,5 +162,6 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - Carátula de marca cuando emite el estudio, en color y sin el filtro gris.
 - La radio se calla mientras suena el vídeo y vuelve sola al acabar.
 - Votación simulada mientras no haya contador real, marcada como demostración.
+- Cortinilla de bienvenida al entrar, una vez por visita y con botón de saltar.
 - Tras votar la banda se recoge (solo el podio + tu voto) y se puede cerrar con
   la X; el cierre se recuerda por versión de ranking.

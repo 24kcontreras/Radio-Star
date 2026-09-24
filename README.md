@@ -334,6 +334,36 @@ sonido, así que al darle al play se pausa la emisión en directo y vuelve sola 
 acabar; y el archivo pesa 12 MB, por lo que va con `preload="none"` y un póster
 (`top-poster.jpg`) y no se descarga hasta que alguien lo pide.
 
+### 8. La cortinilla de bienvenida
+
+Al entrar salta `assets/img/entrada.mp4` (10,8 s, 2,1 MB) a pantalla completa,
+por encima de todo. Se puede saltar en cualquier momento.
+
+Tres reglas que conviene conocer antes de tocarla:
+
+- **Una vez por visita, no por recarga.** Se marca en `sessionStorage`
+  (`rs-bienvenida`), así que al cerrar la pestaña se olvida y vuelve a salir
+  otro día. Repetirla en cada recarga castigaría justo al oyente habitual.
+- **El sonido es un intento, no una promesa.** Los navegadores no dejan
+  arrancar vídeo con sonido si el visitante no tiene historial en el dominio.
+  Se intenta con sonido y, al primer no, se repite en silencio y aparece el
+  botón «Activar sonido». Nunca se queda en negro esperando un permiso.
+- **La radio espera.** La emisión no arranca mientras dura la cortinilla: lo
+  hace `cierraBienvenida()` al terminar el vídeo o al saltarlo. Saltar es un
+  gesto del visitante, así que por ahí la radio suele arrancar con sonido a la
+  primera; si el vídeo acaba solo, se aplican las reglas de autoarranque de
+  siempre.
+
+**No se enseña a quien tiene activado «reducir movimiento»** en su sistema
+(`prefers-reduced-motion`): es una animación a pantalla completa, que es
+justo lo que ese ajuste pide evitar. Ojo con esto al probarla: Windows lo trae
+activado en más equipos de los que parece, y da la sensación de que no funciona.
+Para enseñarla siempre, quita esa línea de `tocaBienvenida()` en
+`assets/js/app.js`.
+
+Para quitar la cortinilla del todo, borra el bloque `[data-bienvenida]` de
+`index.html`: el JS no hace nada si no encuentra la capa.
+
 ## Scripts
 
 ```

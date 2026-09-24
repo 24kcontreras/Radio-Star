@@ -41,6 +41,20 @@
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* sin espacio o bloqueado */ }
   }
 
+  // Igual pero por visita, no para siempre: al cerrar la pestaña se olvida.
+  // Lo usa la cortinilla de bienvenida, que no debe repetirse en cada recarga
+  // pero sí volver a salir cuando alguien entra otro día.
+  function sesionGet(key, fallback) {
+    try {
+      var raw = sessionStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch (e) { return fallback; }
+  }
+
+  function sesionSet(key, value) {
+    try { sessionStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* bloqueado */ }
+  }
+
   /* ── Estado ────────────────────────────────────────────────────────────── */
   var state = {
     mode: 'audio',
@@ -682,6 +696,14 @@
         case 'ranking-cerrar':
           cierraRanking();
           return;
+
+        case 'bienvenida-saltar':
+          cierraBienvenida();
+          return;
+
+        case 'bienvenida-sonido':
+          activaSonidoBienvenida();
+          return;
       }
     }
 
@@ -1105,6 +1127,84 @@
         else pintaResultados();
       })
       .catch(function () { /* sin recuento: se puede votar igual */ });
+  }
+
+  /* ── Bienvenida ────────────────────────────────────────────────────────── */
+  /* Cortinilla de entrada. Tres cosas que condicionan todo lo de abajo:
+
+     - El navegador no deja arrancar vídeo con sonido si el visitante no tiene
+       historial en el dominio. Así que se intenta con sonido y, al primer no,
+       se repite en silencio y se ofrece un botón para activarlo. Nunca se
+       queda en negro esperando un permiso que no va a llegar.
+     - La cortinilla y la radio no pueden sonar a la vez: la emisión se queda
+       esperando y arranca al terminar o al saltar.
+     - Una vez por visita. Repetirla en cada recarga castigaría justo a quien
+       más entra, que es el oyente habitual. */
+
+  var BIENVENIDA_KEY = 'rs-bienvenida';
+  var capaBienvenida = document.querySelector('[data-bienvenida]');
+  var videoBienvenida = document.querySelector('[data-bienvenida-video]');
+  var bienvenidaCerrada = false;
+
+  function tocaBienvenida() {
+    if (!capaBienvenida || !videoBienvenida) return false;
+    if (sesionGet(BIENVENIDA_KEY, false)) return false;
+    // Es pura animación: con «reducir movimiento» activado se pasa de largo.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    return true;
+  }
+
+  function abreBienvenida() {
+    sesionSet(BIENVENIDA_KEY, true);
+
+    capaBienvenida.hidden = false;
+    document.documentElement.classList.add('sin-scroll');
+
+    var saltar = capaBienvenida.querySelector('[data-action="bienvenida-saltar"]');
+    if (saltar) saltar.focus({ preventScroll: true });
+
+    videoBienvenida.addEventListener('ended', cierraBienvenida, { once: true });
+
+    // Si el vídeo no carga, la web no se queda secuestrada detrás de la capa.
+    videoBienvenida.addEventListener('error', cierraBienvenida, { once: true });
+
+    var conSonido = videoBienvenida.play();
+    if (conSonido && conSonido.catch) {
+      conSonido.catch(function () {
+        videoBienvenida.muted = true;
+        var boton = capaBienvenida.querySelector('[data-action="bienvenida-sonido"]');
+        if (boton) boton.hidden = false;
+        var enSilencio = videoBienvenida.play();
+        if (enSilencio && enSilencio.catch) enSilencio.catch(cierraBienvenida);
+      });
+    }
+  }
+
+  function activaSonidoBienvenida() {
+    videoBienvenida.muted = false;
+    var boton = capaBienvenida.querySelector('[data-action="bienvenida-sonido"]');
+    if (boton) boton.hidden = true;
+  }
+
+  function cierraBienvenida() {
+    if (bienvenidaCerrada) return;      // 'ended' y el botón pueden coincidir
+    bienvenidaCerrada = true;
+
+    videoBienvenida.pause();
+    capaBienvenida.classList.add('is-saliendo');
+    document.documentElement.classList.remove('sin-scroll');
+
+    setTimeout(function () {
+      capaBienvenida.hidden = true;
+      // Se suelta el archivo: son 2 MB que ya no hacen falta en memoria.
+      videoBienvenida.removeAttribute('src');
+      videoBienvenida.load();
+    }, 400);
+
+    // Ahora sí puede sonar la radio. Si se ha llegado aquí pulsando «Saltar»
+    // hay gesto de por medio y el navegador la dejará arrancar con sonido;
+    // si el vídeo acabó solo, se aplican las reglas de siempre.
+    intentaAutoarranque();
   }
 
   /* ── Barra fija al desplazar ───────────────────────────────────────────── */
@@ -1594,6 +1694,11 @@
   arrancaOyentes();
   cargaChart();
   cargaEncuesta();
-  intentaAutoarranque();
+
+  // Con cortinilla, la emisión espera: la arranca cierraBienvenida() al
+  // terminar el vídeo o al saltarlo. Sin cortinilla, se intenta ya.
+  if (tocaBienvenida()) abreBienvenida();
+  else intentaAutoarranque();
+
   if (NP_URL) pollNowPlaying();
 })();

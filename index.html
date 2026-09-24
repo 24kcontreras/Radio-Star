@@ -18,7 +18,7 @@
      que se lea a 16 px, y reducido de 148 KB a 6 KB. El original no se toca. -->
 <link rel="icon" type="image/png" href="assets/img/favicon.png">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=10">
+<link rel="stylesheet" href="assets/css/styles.css?v=12">
 </head>
 <body>
 
@@ -29,6 +29,32 @@
      para volver al arranque sólo con el botón. -->
 <audio id="rs-audio" preload="none" data-autoplay data-stream="https://radio.radiobendicion.cl/listen/radio-star-online/radio.mp3"
        data-nowplaying="https://radio.radiobendicion.cl/api/nowplaying/radio-star-online"></audio>
+
+<!-- ═══ Bienvenida ═════════════════════════════════════════════════════════
+     Cortinilla de entrada. Se enseña una vez por visita (sessionStorage), no
+     en cada recarga: a quien escucha la radio a diario le sobraría. Arranca
+     con sonido si el navegador lo permite y, si lo deniega —que es lo normal—,
+     sigue en silencio y ofrece activarlo. Siempre se puede saltar.
+     Empieza oculta: la enseña el JS, para que sin JavaScript no tape la web. -->
+<div class="bienvenida" data-bienvenida hidden>
+  <video class="bienvenida-video" data-bienvenida-video playsinline preload="auto"
+         poster="assets/img/entrada-poster.jpg" width="1024" height="576">
+    <source src="assets/img/entrada.mp4" type="video/mp4">
+  </video>
+  <div class="bienvenida-acciones">
+    <button type="button" class="btn btn-secondary btn-start" data-action="bienvenida-sonido" hidden>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>
+        <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+        <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+      </svg>
+      Activar sonido
+    </button>
+    <button type="button" class="btn btn-primary btn-start" data-action="bienvenida-saltar">
+      Saltar
+    </button>
+  </div>
+</div>
 
 <!-- ═══ Cabecera ═══════════════════════════════════════════════════════════ -->
 <header class="site-header">
@@ -673,7 +699,7 @@
   </div>
 </div>
 
-<script src="assets/js/app.js?v=17"></script>
+<script src="assets/js/app.js?v=18"></script>
 <script src="assets/js/noticias.js?v=1" defer></script>
 </body>
 </html>
