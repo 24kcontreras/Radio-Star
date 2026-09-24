@@ -9,8 +9,10 @@ Se sirve tal cual desde cualquier hosting estático (Netlify, Vercel, GitHub Pag
 ```
 index.html                  Página completa
 assets/css/styles.css       Tokens de diseño + componentes + layout
-assets/js/app.js            Reproductor, Top 40, filtros, boletín
+assets/js/app.js            Reproductor, Top 40, filtros, boletín, encuesta
 assets/img/logo.png         Logotipo (extraído de la maqueta)
+assets/img/top.mp4          Ranking non stop en vídeo (9 temas, 72 s)
+assets/img/top-poster.jpg   Fotograma de portada del vídeo
 assets/img/cover.webp       Carátula de ejemplo
 assets/fonts/*.woff2        Archivo 400/600/800, autoalojada
 RadioStar - standalone.html Maqueta original (referencia, no se sirve)
@@ -226,6 +228,68 @@ el historial, los oyentes y el locutor al aire. Además, cuando lo que suena
 figura en el Top 40, se reutiliza el nombre ya limpio que devolvió
 `/api/top40` —así la ficha y la lista no se contradicen— y la fila
 correspondiente se marca en rojo.
+
+### 7. La encuesta del ranking en vídeo
+
+El vídeo `assets/img/top.mp4` abre el hero. Al terminar se despliega sola la
+encuesta: cuál de las nueve canciones del ranking es la mejor. También se puede
+abrir sin esperar, con el botón «Votar ya».
+
+Las nueve canciones están escritas en `index.html`, dentro del formulario
+`[data-encuesta-form]`. El `value` de cada `<input>` tiene que coincidir con la
+lista `OPCIONES` de `api/encuesta.js`: es una lista cerrada, y cualquier voto que
+no esté en ella se descarta. Si algún día cambia el vídeo, hay que tocar los dos
+sitios.
+
+Los porcentajes los ve **todo el mundo**, haya votado o no: desde el botón «Ver
+resultados» del formulario, y automáticamente al votar. La invitación anuncia
+además cuánta gente lleva votado («Ya han votado 128 personas»), que es lo que
+evita la sensación de encuesta vacía.
+
+#### Conectar el recuento compartido (imprescindible)
+
+Sin almacén, cada visitante sólo ve su propio voto. Para que los porcentajes
+sean reales y comunes hay que darle a la función un Redis accesible por REST.
+Es gratis y son cinco minutos:
+
+1. En el panel de Vercel, proyecto **RadioStar** → pestaña **Storage** →
+   **Create Database** → **Upstash for Redis**. El plan gratuito sobra.
+2. Al conectarlo al proyecto, Vercel añade las variables de entorno solo.
+3. **Redeploy** del proyecto (las variables nuevas no entran en el despliegue
+   que ya estaba corriendo).
+
+Las variables que se leen son:
+
+```
+KV_REST_API_URL         URL REST del Redis
+KV_REST_API_TOKEN       Token de acceso
+```
+
+También valen `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, que es como
+las publica Upstash cuando se contrata por fuera de la integración de Vercel.
+
+Para comprobar que quedó bien, basta abrir `/api/encuesta` en el navegador: si
+responde `almacen: true`, está contando.
+
+Mientras no estén puestas la función responde `almacen: false` —no falla— y la
+página guarda el voto en el navegador de quien vota y lo dice con todas las
+letras, en lugar de enseñar porcentajes inventados. En cuanto se añaden las
+variables y se redespliega, los resultados salen solos: no hay que tocar código.
+
+Sobre la cuota: el GET del recuento se cachea 15 s en el CDN de Vercel, así que
+Redis recibe unas pocas consultas por minuto por mucha gente que entre, y el
+plan gratuito de Upstash (10.000 comandos al día) aguanta de sobra. Los votos no
+se cachean nunca: quien vota ve su voto ya sumado.
+
+Un apunte sobre el recuento: el «ya has votado» se guarda en `localStorage`
+(`rs-voto-ranking`), así que evita el voto repetido por descuido, no a quien se
+empeñe en votar varias veces. Para una votación con premio haría falta algo más
+—sesión, límite por IP o captcha—, que hoy no lleva.
+
+Dos detalles de comportamiento que conviene conocer: el vídeo lleva su propio
+sonido, así que al darle al play se pausa la emisión en directo y vuelve sola al
+acabar; y el archivo pesa 12 MB, por lo que va con `preload="none"` y un póster
+(`top-poster.jpg`) y no se descarga hasta que alguien lo pide.
 
 ## Scripts
 

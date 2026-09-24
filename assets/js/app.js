@@ -19,6 +19,12 @@
   var chartAviso = CARGANDO;   // lo que se enseña mientras la tabla está vacía
   // Lo que se anuncia mientras hay alguien al aire y el emisor no manda título.
   var EN_DIRECTO = 'Transmitiendo desde nuestro estudio';
+
+  // Carátula para cuando emite el estudio y no la rotación del servidor. Los
+  // directos no traen imagen propia, y dejar el hueco gris parecía una avería.
+  // Es una pieza de marca, no una foto: se enseña en color (ver `no-filtro`).
+  var ARTE_ESTUDIO = 'assets/img/estudio.webp';
+
   var VOL_STEPS = 10;
 
   /* ── Preferencias guardadas ────────────────────────────────────────────── */
@@ -98,6 +104,13 @@
   // qué suena. Puede no haber nada: entonces se deja el texto del HTML.
   function currentTrack() {
     return state.live || CHART[state.idx] || null;
+  }
+
+  function tipoImagen(url) {
+    var ext = String(url || '').split('?')[0].split('.').pop().toLowerCase();
+    if (ext === 'webp') return 'image/webp';
+    if (ext === 'png') return 'image/png';
+    return 'image/jpeg';
   }
 
   function likeKey(t) {
@@ -249,6 +262,14 @@
       bind('track-album', t.album);
       bind('track-pos', t.pos ? pad(t.pos) : '—');
       bindSrc('cover', t.art);
+
+      // La carátula del estudio lleva el logotipo en amarillo: pasarla por el
+      // filtro en blanco y negro se comería la marca. Las portadas de disco sí
+      // siguen en gris, como el resto de imágenes de la página.
+      var deMarca = t.art === ARTE_ESTUDIO;
+      $all('.cover, .bar-cover').forEach(function (c) {
+        c.classList.toggle('no-filtro', deMarca);
+      });
 
       // El distintivo "Nº X del Top 40" sólo tiene sentido si la canción figura
       // en la lista; lo que suena en directo muchas veces no está.
@@ -522,8 +543,10 @@
     function arranca(e) {
       // Si el toque fue sobre un control, se desarma y se deja que lo maneje
       // quien corresponde: si no, el botón de play arrancaría aquí y su propio
-      // manejador lo pararía acto seguido.
-      var enControl = e.target && e.target.closest && e.target.closest('[data-action]');
+      // manejador lo pararía acto seguido. El vídeo del ranking cuenta también:
+      // lleva su propio sonido y la radio no puede arrancarle encima.
+      var enControl = e.target && e.target.closest &&
+        e.target.closest('[data-action], [data-ranking-video]');
       document.removeEventListener('pointerdown', arranca, true);
       gestoArmado = false;
       if (!enControl && !state.playing) setPlaying(true);
@@ -630,6 +653,23 @@
           state.mode = state.mode === 'video' ? 'audio' : 'video';
           render();
           return;
+
+        case 'ranking-play':
+          reproduceRanking();
+          return;
+
+        case 'encuesta-abrir':
+          abreEncuesta();
+          return;
+
+        case 'encuesta-resultados':
+          muestraResultados();
+          return;
+
+        case 'encuesta-votar':
+          panelEncuesta('voto');
+          enfoca('encuesta-title');
+          return;
       }
     }
 
@@ -657,6 +697,7 @@
       return;
     }
     if (r.name === 'rs-pod') filterShows(Number(r.value));
+    if (r.name === 'rs-encuesta') habilitaVoto();
   });
 
   function filterShows(group) {
@@ -705,6 +746,275 @@
       var ok = document.querySelector('[data-newsletter-ok]');
       if (ok) ok.hidden = false;
     });
+  }
+
+  /* ── Ranking en vídeo y encuesta ───────────────────────────────────────── */
+  // El vídeo del ranking abre el hero. Al terminar se abre sola la encuesta:
+  // cuál de las nueve canciones es la mejor. Los votos van a /api/encuesta,
+  // que sólo lleva recuento compartido si la emisora ha configurado un
+  // almacén. Cuando no lo hay, el voto se queda en este navegador y se dice
+  // tal cual: antes eso que enseñar porcentajes sacados de un único voto.
+
+  var ENCUESTA_KEY = 'rs-voto-ranking';
+  var rankingBox = document.querySelector('[data-ranking]');
+  var rankingVideo = document.querySelector('[data-ranking-video]');
+  var encuestaForm = document.querySelector('[data-encuesta-form]');
+
+  var encuesta = {
+    voto: storeGet(ENCUESTA_KEY, null),  // lo que ya votó este navegador
+    resultados: null,                    // { opcion: votos }, tal cual lo da el servidor
+    total: 0,
+    compartido: false,                   // hay almacén y el recuento es real
+    enviando: false
+  };
+
+  // La radio y el vídeo no pueden sonar a la vez: si la emisión estaba en
+  // marcha se calla mientras dura el ranking y vuelve sola al acabar.
+  var radioEnEspera = false;
+
+  function reproduceRanking() {
+    if (!rankingVideo) return;
+    rankingVideo.controls = true;
+    var intento = rankingVideo.play();
+    if (intento && intento.catch) {
+      intento.catch(function () {
+        // Denegado por el navegador: se descubren los controles nativos para
+        // que se pueda arrancar a mano.
+        if (rankingBox) rankingBox.classList.add('is-reproduciendo');
+      });
+    }
+  }
+
+  if (rankingVideo) {
+    rankingVideo.addEventListener('play', function () {
+      if (rankingBox) rankingBox.classList.add('is-reproduciendo');
+      if (state.playing) {
+        setPlaying(false);
+        radioEnEspera = true;
+      }
+    });
+
+    // La radio vuelve sólo al terminar el vídeo. Si alguien lo pausa a media
+    // canción lo que quiere es silencio, no que arranque la emisión encima.
+    rankingVideo.addEventListener('ended', function () {
+      if (radioEnEspera) {
+        setPlaying(true);
+        radioEnEspera = false;
+      }
+      abreEncuesta();
+    });
+  }
+
+  function panelEncuesta(nombre) {
+    $all('[data-encuesta-panel]').forEach(function (p) {
+      p.hidden = p.dataset.encuestaPanel !== nombre;
+    });
+  }
+
+  function abreEncuesta() {
+    if (!encuestaForm) return;
+    if (encuesta.voto) {
+      muestraResultados();
+      return;
+    }
+    panelEncuesta('voto');
+    enfoca('encuesta-title');
+  }
+
+  // El recuento se enseña a todo el mundo, haya votado o no: una encuesta en
+  // la que no se ve nada hasta votar parece vacía, y de paso ver los números
+  // es lo que anima a participar.
+  function muestraResultados() {
+    pintaResultados();
+    panelEncuesta('resultado');
+    enfoca('resultado-title');
+  }
+
+  // El panel cambia sin recargar: hay que llevar el foco al título nuevo para
+  // que quien va con teclado o lector de pantalla se entere.
+  function enfoca(id) {
+    var h = document.getElementById(id);
+    if (!h) return;
+    h.focus({ preventScroll: true });
+    h.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function elegida() {
+    var marcada = document.querySelector('input[name="rs-encuesta"]:checked');
+    return marcada ? marcada.value : null;
+  }
+
+  function habilitaVoto() {
+    var btn = document.querySelector('[data-encuesta-enviar]');
+    if (btn) btn.disabled = !elegida() || encuesta.enviando;
+    if (elegida()) aviso('');
+  }
+
+  function aviso(texto) {
+    var n = document.querySelector('[data-encuesta-aviso]');
+    if (n) n.textContent = texto;
+  }
+
+  if (encuestaForm) {
+    encuestaForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var opcion = elegida();
+      if (!opcion || encuesta.enviando) return;
+      enviaVoto(opcion);
+    });
+  }
+
+  function enviaVoto(opcion) {
+    encuesta.enviando = true;
+    habilitaVoto();
+    aviso('Enviando tu voto…');
+
+    fetch('/api/encuesta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ opcion: opcion })
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) { guardaVoto(opcion, data); })
+      .catch(function () {
+        // Sin servidor el voto no se tira: se queda aquí y se avisa.
+        guardaVoto(opcion, null);
+      });
+  }
+
+  function guardaVoto(opcion, data) {
+    encuesta.enviando = false;
+    encuesta.voto = opcion;
+    storeSet(ENCUESTA_KEY, opcion);
+    aplicaRecuento(data);
+    actualizaContador();
+    muestraResultados();
+  }
+
+  function aplicaRecuento(data) {
+    if (!data || !data.almacen || !data.resultados) {
+      encuesta.compartido = false;
+      return;
+    }
+    encuesta.compartido = true;
+    encuesta.resultados = data.resultados;
+    encuesta.total = Number(data.total) || 0;
+  }
+
+  // Las nueve canciones se leen del propio formulario: el HTML sigue siendo la
+  // única lista y no hay que repetirla aquí.
+  function opciones() {
+    return $all('input[name="rs-encuesta"]').map(function (input) {
+      var fila = input.closest('.encuesta-opt');
+      return {
+        id: input.value,
+        cancion: textoDe(fila, '.encuesta-cancion'),
+        artista: textoDe(fila, '.encuesta-artista')
+      };
+    });
+  }
+
+  function textoDe(raiz, sel) {
+    var n = raiz && raiz.querySelector(sel);
+    return n ? n.textContent : '';
+  }
+
+  function pintaResultados() {
+    var caja = document.querySelector('[data-encuesta-resultados]');
+    var pie = document.querySelector('[data-encuesta-pie]');
+    var votar = document.querySelector('[data-action="encuesta-votar"]');
+    if (!caja) return;
+
+    caja.textContent = '';
+
+    // El botón de votar sólo aparece si a quien mira le queda voto por echar.
+    if (votar) votar.hidden = !!encuesta.voto;
+
+    var lista = opciones();
+    var mia = lista.filter(function (o) { return o.id === encuesta.voto; })[0];
+
+    // Sin almacén compartido no hay recuento que enseñar: se dice, en lugar de
+    // pintar nueve barras al 0 % que parecerían una encuesta muerta.
+    if (!encuesta.compartido) {
+      caja.appendChild(el('p', 'ranking-lead', mia
+        ? 'Listo: tu voto va para «' + mia.cancion + '», de ' + mia.artista + '.'
+        : 'La votación está abierta. Elige tu canción y cuéntanos cuál es la mejor.'));
+      if (pie) {
+        pie.textContent = mia
+          ? 'Guardado en este navegador. El recuento de toda la comunidad se publicará ' +
+            'en cuanto la emisora conecte el almacén de votos.'
+          : 'El recuento compartido todavía no está activo.';
+      }
+      return;
+    }
+
+    var total = encuesta.total || 0;
+
+    if (!total) {
+      caja.appendChild(el('p', 'ranking-lead',
+        'Todavía no ha votado nadie. Sé la primera persona en elegir el mejor tema del ranking.'));
+      if (pie) pie.textContent = '';
+      return;
+    }
+
+    var ul = el('ul', 'encuesta-res');
+
+    lista.map(function (o) {
+      o.votos = Number(encuesta.resultados[o.id]) || 0;
+      return o;
+    }).sort(function (a, b) {
+      return b.votos - a.votos;
+    }).forEach(function (o) {
+      var pct = (o.votos / total) * 100;
+      var li = el('li', o.id === encuesta.voto ? 'is-tuyo' : null);
+      li.appendChild(el('span', 'n', o.cancion + ' — ' + o.artista));
+      li.appendChild(el('span', 'p', Math.round(pct) + '%'));
+      var barra = el('span', 'b');
+      barra.style.setProperty('--np', pct.toFixed(1) + '%');
+      li.appendChild(barra);
+      ul.appendChild(li);
+    });
+
+    caja.appendChild(ul);
+    if (pie) {
+      pie.textContent = (total === 1 ? '1 voto contado' : total + ' votos contados') +
+        (encuesta.voto ? ' · ya has votado' : '');
+    }
+  }
+
+  // El número de votos también se anuncia en la invitación: entrar y leer que
+  // ya ha votado gente es lo que quita la sensación de encuesta vacía.
+  function actualizaContador() {
+    var n = document.querySelector('[data-encuesta-contador]');
+    if (!n) return;
+    var total = encuesta.compartido ? (encuesta.total || 0) : 0;
+    n.textContent = total ? (total === 1 ? 'Ya ha votado 1 persona · ' : 'Ya han votado ' + total + ' personas · ') : '';
+  }
+
+  // Al entrar se pregunta el recuento: quien ya votó ve los números al día y
+  // se sabe si hay almacén compartido antes de que nadie pulse nada.
+  function cargaEncuesta() {
+    if (!encuestaForm) return;
+
+    if (encuesta.voto) {
+      var abrir = document.querySelector('[data-action="encuesta-abrir"]');
+      if (abrir) abrir.textContent = 'Ver resultados';
+    }
+
+    fetch('/api/encuesta', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        aplicaRecuento(data);
+        actualizaContador();
+        pintaResultados();
+      })
+      .catch(function () { /* sin recuento: se puede votar igual */ });
   }
 
   /* ── Barra fija al desplazar ───────────────────────────────────────────── */
@@ -894,7 +1204,9 @@
       title: t.title || 'RadioStar',
       artist: t.artist || 'RadioStar',
       album: t.album || 'En directo',
-      artwork: t.art ? [{ src: t.art, sizes: '512x512', type: 'image/jpeg' }] : []
+      // El tipo se deduce de la extensión: la carátula del estudio es .webp y
+      // anunciarla como JPEG hacía que algún sistema la descartara.
+      artwork: t.art ? [{ src: t.art, sizes: '512x512', type: tipoImagen(t.art) }] : []
     });
   }
 
@@ -950,7 +1262,7 @@
         title: EN_DIRECTO,
         artist: '',
         album: '',
-        art: live.art || '',
+        art: live.art || ARTE_ESTUDIO,
         pos: null
       };
       if (state.liveIdx !== null) {
@@ -983,7 +1295,11 @@
          archivos que todavía no llevan la suya incrustada.
          (Estuvo desactivada mientras AzuraCast servía la misma imagen por
          defecto para toda la rotación; ya no es el caso.) */
-      art: song.art || nombre.art || '',
+      /* Si quien emite es el estudio y su archivo no trae carátula, entra la
+         de marca en lugar del hueco gris. Con la rotación del servidor no:
+         ahí un disco sin imagen es un disco sin imagen, y anunciar "en vivo
+         desde el estudio" sobre una canción del AutoDJ sería mentir. */
+      art: song.art || nombre.art || (enVivo ? ARTE_ESTUDIO : ''),
       pos: idx === null ? null : CHART[idx].pos
     };
 
@@ -1187,6 +1503,7 @@
   onScroll();
   arrancaOyentes();
   cargaChart();
+  cargaEncuesta();
   intentaAutoarranque();
   if (NP_URL) pollNowPlaying();
 })();
