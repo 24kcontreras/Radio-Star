@@ -345,12 +345,30 @@ figure { margin: 0; }
 /* Banda que abre el hero: el vídeo vertical a la izquierda y, a la derecha,
    el panel que va cambiando (invitación → encuesta → resultados). */
 .ranking-hero {
+  position: relative;
   max-width: var(--wrap); margin: 0 auto;
   padding: clamp(20px, 2.6vw, 34px) var(--gutter);
   border-bottom: 2px solid var(--color-divider);
   display: grid; grid-template-columns: minmax(0, 248px) minmax(0, 1fr);
   gap: clamp(18px, 2.6vw, 34px); align-items: start;
 }
+
+/* Tras votar la banda se recoge: fuera el vídeo, sólo el resultado y en una
+   franja baja, para que no siga ocupando media portada a quien ya participó. */
+.ranking-hero.is-compacta {
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: clamp(14px, 1.6vw, 20px);
+}
+.ranking-hero.is-compacta .ranking-video { display: none; }
+.ranking-hero.is-compacta .ranking-title { font-size: clamp(19px, 2vw, 24px); }
+
+.ranking-cerrar {
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  width: var(--tap); height: var(--tap); padding: 0;
+  display: grid; place-items: center; cursor: pointer;
+  background: transparent; border: 0; color: var(--color-neutral-700);
+}
+.ranking-cerrar:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
 
 .ranking-video {
   position: relative; margin: 0; width: 100%; aspect-ratio: 3 / 4;

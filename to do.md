@@ -119,6 +119,11 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
       Queda una decisión pequeña: **¿se deja visible la etiqueta «Demostración»?**
       Yo la dejaría hasta conectar el contador real —protege a la emisora si
       alguien pregunta—, pero se quita en un minuto si prefieres que no salga.
+- [ ] **Al cambiar el vídeo del ranking, sube `RANKING_VERSION`.** Está en
+      `assets/js/app.js`, ahora vale `top9-2026-09`. Si no se sube, a quien cerró
+      la banda con la X no le volverá a aparecer nunca, ni con el ranking nuevo.
+      Hay que cambiarla a la vez que las `OPCIONES` de `api/encuesta.js` y las
+      canciones de `index.html`.
 - [ ] **¿Las fotos en blanco y negro?** Todo el sitio pasa las imágenes por un
       filtro de gris (clase `grayscale`). Es una decisión de diseño de la
       maqueta. La carátula del estudio ya va en color como excepción, porque
@@ -146,3 +151,5 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - Carátula de marca cuando emite el estudio, en color y sin el filtro gris.
 - La radio se calla mientras suena el vídeo y vuelve sola al acabar.
 - Votación simulada mientras no haya contador real, marcada como demostración.
+- Tras votar la banda se recoge (solo el podio + tu voto) y se puede cerrar con
+  la X; el cierre se recuerda por versión de ranking.

@@ -667,8 +667,20 @@
           return;
 
         case 'encuesta-votar':
+          encuesta.compacta = true;   // al volver a votar se recoge otra vez
+          if (rankingBox) rankingBox.classList.remove('is-compacta');
           panelEncuesta('voto');
           enfoca('encuesta-title');
+          return;
+
+        case 'encuesta-detalle':
+          encuesta.compacta = !encuesta.compacta;
+          aplicaCompacta();
+          pintaResultados();
+          return;
+
+        case 'ranking-cerrar':
+          cierraRanking();
           return;
       }
     }
@@ -756,6 +768,16 @@
   // tal cual: antes eso que enseñar porcentajes sacados de un único voto.
 
   var ENCUESTA_KEY = 'rs-voto-ranking';
+  var CERRADO_KEY = 'rs-ranking-cerrado';
+  var RESUMEN_FILAS = 3;        // puestos que se ven con la banda recogida
+
+  /* Quien cierra la banda no la vuelve a ver… mientras siga siendo este mismo
+     ranking. Al cambiar el vídeo o las canciones se sube esta etiqueta y
+     reaparece para todo el mundo: si no, el cierre de hoy enterraría también
+     la encuesta del mes que viene. Hay que subirla junto con las OPCIONES de
+     api/encuesta.js. */
+  var RANKING_VERSION = 'top9-2026-09';
+
   var rankingBox = document.querySelector('[data-ranking]');
   var rankingVideo = document.querySelector('[data-ranking-video]');
   var encuestaForm = document.querySelector('[data-encuesta-form]');
@@ -765,7 +787,9 @@
     resultados: null,                    // { opcion: votos }, tal cual lo da el servidor
     total: 0,
     compartido: false,                   // hay almacén y el recuento es real
-    enviando: false
+    simulado: false,
+    enviando: false,
+    compacta: true                       // el resultado empieza recogido
   };
 
   // La radio y el vídeo no pueden sonar a la vez: si la emisión estaba en
@@ -824,10 +848,26 @@
   // El recuento se enseña a todo el mundo, haya votado o no: una encuesta en
   // la que no se ve nada hasta votar parece vacía, y de paso ver los números
   // es lo que anima a participar.
-  function muestraResultados() {
+  //
+  // Con `conFoco` a false no se mueve el foco ni se desplaza la página: es lo
+  // que hace falta al cargar, donde nadie ha pulsado nada.
+  function muestraResultados(conFoco) {
+    aplicaCompacta();
     pintaResultados();
     panelEncuesta('resultado');
-    enfoca('resultado-title');
+    if (conFoco !== false) enfoca('resultado-title');
+  }
+
+  // La banda recogida esconde el vídeo y deja sólo el resultado. Sólo se recoge
+  // enseñando resultados: mientras se vota hace falta la lista entera.
+  function aplicaCompacta() {
+    if (!rankingBox) return;
+    rankingBox.classList.toggle('is-compacta', !!encuesta.compacta);
+  }
+
+  function cierraRanking() {
+    if (rankingBox) rankingBox.hidden = true;
+    storeSet(CERRADO_KEY, RANKING_VERSION);
   }
 
   // El panel cambia sin recargar: hay que llevar el foco al título nuevo para
@@ -940,8 +980,12 @@
     var demo = document.querySelector('[data-encuesta-demo]');
     if (!caja) return;
 
+    var detalle = document.querySelector('[data-action="encuesta-detalle"]');
+
     caja.textContent = '';
     if (demo) demo.hidden = !encuesta.simulado;
+    // Sin lista que enseñar no hay nada que desplegar.
+    if (detalle) detalle.hidden = true;
 
     // El botón de votar sólo aparece si a quien mira le queda voto por echar.
     if (votar) votar.hidden = !!encuesta.voto;
@@ -975,12 +1019,22 @@
 
     var ul = el('ul', 'encuesta-res');
 
-    lista.map(function (o) {
+    var ordenada = lista.map(function (o) {
       o.votos = Number(encuesta.resultados[o.id]) || 0;
       return o;
     }).sort(function (a, b) {
       return b.votos - a.votos;
-    }).forEach(function (o) {
+    });
+
+    /* Recogida: solo el podio. Si la canción votada por quien mira se queda
+       fuera, se anade igualmente al final: es el dato que ha venido a ver. */
+    var visibles = ordenada;
+    if (encuesta.compacta) {
+      visibles = ordenada.slice(0, RESUMEN_FILAS);
+      if (mia && visibles.indexOf(mia) === -1) visibles = visibles.concat([mia]);
+    }
+
+    visibles.forEach(function (o) {
       var pct = (o.votos / total) * 100;
       var li = el('li', o.id === encuesta.voto ? 'is-tuyo' : null);
       li.appendChild(el('span', 'n', o.cancion + ' — ' + o.artista));
@@ -992,6 +1046,14 @@
     });
 
     caja.appendChild(ul);
+
+    if (detalle) {
+      detalle.hidden = false;
+      detalle.textContent = encuesta.compacta
+        ? 'Ver las 9 canciones'
+        : 'Ver solo el podio';
+    }
+
     if (pie) {
       pie.textContent = (total === 1 ? '1 voto contado' : total.toLocaleString('es-CL') + ' votos contados') +
         (encuesta.voto ? ' · ya has votado' : '') +
@@ -1015,6 +1077,12 @@
   function cargaEncuesta() {
     if (!encuestaForm) return;
 
+    // Cerrada en una visita anterior, y sigue siendo el mismo ranking.
+    if (storeGet(CERRADO_KEY, null) === RANKING_VERSION) {
+      if (rankingBox) rankingBox.hidden = true;
+      return;
+    }
+
     if (encuesta.voto) {
       var abrir = document.querySelector('[data-action="encuesta-abrir"]');
       if (abrir) abrir.textContent = 'Ver resultados';
@@ -1029,7 +1097,12 @@
         aplicaRecuento(data);
         sumaVotoPropio();
         actualizaContador();
-        pintaResultados();
+
+        // Quien ya votó entra directamente al resultado recogido: no tiene
+        // sentido volver a invitarle a votar cada vez que abre la página.
+        // Sin foco ni desplazamiento, que aquí nadie ha pulsado nada.
+        if (encuesta.voto) muestraResultados(false);
+        else pintaResultados();
       })
       .catch(function () { /* sin recuento: se puede votar igual */ });
   }

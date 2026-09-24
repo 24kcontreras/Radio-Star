@@ -271,6 +271,22 @@ las publica Upstash cuando se contrata por fuera de la integración de Vercel.
 Para comprobar que quedó bien, basta abrir `/api/encuesta` en el navegador: si
 responde `almacen: true`, está contando.
 
+#### Recogerse y cerrarse
+
+Tras votar, la banda **se recoge sola**: desaparece el vídeo, el titular encoge
+y sólo quedan el podio (3 puestos) más la canción votada, aunque haya quedado
+fuera del podio —es el dato que esa persona ha venido a ver—. «Ver las 9
+canciones» despliega la lista entera y devuelve el vídeo; «Ver solo el podio»
+la vuelve a recoger. Quien ya votó entra directamente al resultado recogido en
+las siguientes visitas, sin pasar por la invitación.
+
+La **X** de la esquina cierra la banda entera y lo recuerda en `localStorage`
+(`rs-ranking-cerrado`). No se guarda un `true` sino la etiqueta
+`RANKING_VERSION` de `assets/js/app.js`: así, **al cambiar el vídeo o las
+canciones se sube esa etiqueta y la banda reaparece para todo el mundo**, en vez
+de quedar enterrada para siempre a quien la cerró una vez. Hay que subirla a la
+vez que las `OPCIONES` de `api/encuesta.js`.
+
 #### Recuento simulado mientras no haya almacén
 
 Sin las variables puestas, la función **no falla ni deja la encuesta vacía**:
