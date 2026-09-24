@@ -179,6 +179,11 @@
       <div data-encuesta-panel="resultado" hidden>
         <div class="kicker">Resultados</div>
         <h2 class="ranking-title" id="resultado-title" tabindex="-1">ASÍ VA LA VOTACIÓN</h2>
+        <!-- Sólo mientras el recuento sea simulado; en cuanto haya almacén
+             conectado, el JS lo esconde. -->
+        <p class="ranking-demo" data-encuesta-demo hidden>
+          <span class="tag tag-neutral">Demostración</span>
+        </p>
         <div data-encuesta-resultados></div>
         <p class="ranking-nota" data-encuesta-pie></p>
         <div class="ranking-cta">

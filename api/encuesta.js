@@ -109,6 +109,61 @@ function leeOpcion(req) {
   return OPCIONES.indexOf(opcion) === -1 ? null : opcion;
 }
 
+/* ── Votación simulada ──────────────────────────────────────────────────── */
+
+/* Mientras no haya almacén conectado, el recuento se simula para que la
+   encuesta no se vea vacía. En cuanto se configuran las variables del Redis
+   esto deja de usarse solo: no hay que tocar nada.
+
+   Dos reglas para que no cante:
+   - Determinista. Sale del reloj, no del azar, así que todo el mundo ve los
+     mismos números y no cambian al recargar.
+   - Monótona. Cada canción tiene su propio ritmo por hora, de modo que los
+     votos sólo suben y los porcentajes se mueven despacio. Un recuento que
+     baja o que lleva semanas congelado se nota enseguida. */
+
+var SIMULACION_INICIO = Date.UTC(2026, 8, 24, 0, 0, 0);   // 24-09-2026, 00:00 UTC
+
+/* El crecimiento va con horas^0,65 y no con las horas a secas: una encuesta
+   recién abierta recoge votos deprisa y luego se va apagando, que es como se
+   comportan de verdad. En línea recta acumularía decenas de miles de votos en
+   un año y no se lo creería nadie; así se queda en unos 2.300. */
+var SIMULACION_CURVA = 0.65;
+
+/* base = votos de partida; ritmo = cuánto sube cada una. Los ritmos NO son
+   proporcionales a la base a propósito: si lo fueran, los porcentajes se
+   quedarían clavados para siempre y al volver a la semana siguiente se notaría
+   que no se mueve nada. Así «Barbra Streisand» adelanta a «Stereo Love» sobre
+   el sexto día, y la lista cambia sola de cuando en cuando. */
+var SIMULACION = {
+  'right-said-fred-im-too-sexy':  { base: 41, ritmo: 0.55 },
+  'lighthouse-family-raincloud':  { base: 12, ritmo: 0.25 },
+  'masterboy-dancing-forever':    { base: 23, ritmo: 0.45 },
+  'duck-sauce-barbra-streisand':  { base: 58, ritmo: 1.25 },
+  'edward-maya-stereo-love':      { base: 67, ritmo: 0.90 },
+  'bob-sinclar-world-hold-on':    { base: 44, ritmo: 0.80 },
+  'billy-more-up-and-down':       { base: 15, ritmo: 0.30 },
+  'junior-jack-my-feeling':       { base: 19, ritmo: 0.40 },
+  'paul-johnson-get-get-down':    { base: 28, ritmo: 0.60 }
+};
+
+function recuentoSimulado() {
+  var horas = Math.max(0, (Date.now() - SIMULACION_INICIO) / 3600000);
+  var avance = Math.pow(horas, SIMULACION_CURVA);
+  var resultados = {};
+  var total = 0;
+
+  OPCIONES.forEach(function (id) {
+    var s = SIMULACION[id] || { base: 0, ritmo: 0 };
+    // Math.round sobre una función creciente: el contador nunca baja.
+    var votos = s.base + Math.round(avance * s.ritmo);
+    resultados[id] = votos;
+    total += votos;
+  });
+
+  return { resultados: resultados, total: total };
+}
+
 /* ── Handler ────────────────────────────────────────────────────────────── */
 
 module.exports = async function (req, res) {
@@ -122,14 +177,24 @@ module.exports = async function (req, res) {
     return;
   }
 
-  // Sin almacén se responde 200 a propósito: no es un fallo, es que la
-  // emisora todavía no ha conectado el contador. La página ya sabe qué hacer.
+  // Sin almacén se responde 200 a propósito: no es un fallo, es que la emisora
+  // todavía no ha conectado el contador. Se devuelve el recuento simulado para
+  // que la encuesta se vea viva, marcado como tal para que la página lo diga.
   if (!hayAlmacen) {
+    var sim = recuentoSimulado();
+
+    // El GET se puede cachear: la simulación sólo depende del reloj.
+    if (req.method === 'GET') {
+      res.setHeader('Cache-Control',
+        'public, s-maxage=' + CACHE_SEGUNDOS + ', stale-while-revalidate=' + CACHE_OBSOLETO);
+    }
+
     res.status(200).json({
       almacen: false,
-      total: 0,
-      resultados: {},
-      nota: 'Falta configurar KV_REST_API_URL y KV_REST_API_TOKEN para contar los votos.'
+      simulado: true,
+      total: sim.total,
+      resultados: sim.resultados,
+      nota: 'Recuento simulado. Configura KV_REST_API_URL y KV_REST_API_TOKEN para contar votos reales.'
     });
     return;
   }

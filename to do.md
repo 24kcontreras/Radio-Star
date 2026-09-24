@@ -11,8 +11,10 @@ todo lo que vaya saliendo.
 
 ### 1.1 Conectar el almacén de votos de la encuesta
 
-Sin esto **cada visitante solo ve su propio voto**: no hay porcentajes comunes.
-El código ya está escrito y probado; solo falta dónde guardar. Es gratis.
+Ahora mismo **los porcentajes que se ven son simulados** (marcados como
+«Demostración»). Para que sean votos reales de verdad falta conectar el almacén.
+El código ya está escrito y probado; solo falta dónde guardar. Es gratis, y al
+conectarlo la simulación se apaga sola.
 
 - [ ] Panel de Vercel → proyecto **RadioStar** → pestaña **Storage** →
       **Create Database** → **Upstash for Redis** (plan gratuito).
@@ -110,13 +112,13 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 
 ## 6. Decisiones que necesito de ti o del cliente
 
-- [ ] **¿Sembrar votos iniciales en la encuesta?** Se puede arrancar con números
-      ya puestos para que no se vea vacía. **Mi recomendación es que no:** si se
-      publica que un tema va ganando con 200 votos y en realidad hay 3, el día
-      que alguien lo note el problema es de credibilidad de la emisora. El
-      estado inicial ya está cuidado («Sé la primera persona en votar») y la
-      invitación enseña el recuento real en cuanto empiece a haberlo.
-      Si aun así lo quieren, es un comando y lo dejo en cinco minutos.
+- [x] **¿Simular la votación mientras no haya contador real?** — decidido: sí.
+      Hecho el 24-09-2026. Los números salen del reloj, son iguales para todo el
+      mundo, solo suben y llevan etiqueta «Demostración». Se apagan solos al
+      conectar el almacén (punto 1.1).
+      Queda una decisión pequeña: **¿se deja visible la etiqueta «Demostración»?**
+      Yo la dejaría hasta conectar el contador real —protege a la emisora si
+      alguien pregunta—, pero se quita en un minuto si prefieres que no salga.
 - [ ] **¿Las fotos en blanco y negro?** Todo el sitio pasa las imágenes por un
       filtro de gris (clase `grayscale`). Es una decisión de diseño de la
       maqueta. La carátula del estudio ya va en color como excepción, porque
@@ -143,3 +145,4 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
   anuncia cuánta gente lleva votado.
 - Carátula de marca cuando emite el estudio, en color y sin el filtro gris.
 - La radio se calla mientras suena el vídeo y vuelve sola al acabar.
+- Votación simulada mientras no haya contador real, marcada como demostración.

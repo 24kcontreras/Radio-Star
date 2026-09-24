@@ -890,18 +890,29 @@
     encuesta.voto = opcion;
     storeSet(ENCUESTA_KEY, opcion);
     aplicaRecuento(data);
+    sumaVotoPropio();
     actualizaContador();
     muestraResultados();
   }
 
   function aplicaRecuento(data) {
-    if (!data || !data.almacen || !data.resultados) {
+    if (!data || !data.resultados || (!data.almacen && !data.simulado)) {
       encuesta.compartido = false;
+      encuesta.simulado = false;
       return;
     }
     encuesta.compartido = true;
+    encuesta.simulado = !!data.simulado;
     encuesta.resultados = data.resultados;
     encuesta.total = Number(data.total) || 0;
+  }
+
+  // Con el recuento simulado el voto no se guarda en ningún servidor: se suma
+  // aquí para que quien vota se vea reflejado y su canción quede marcada.
+  function sumaVotoPropio() {
+    if (!encuesta.simulado || !encuesta.voto || !encuesta.resultados) return;
+    encuesta.resultados[encuesta.voto] = (Number(encuesta.resultados[encuesta.voto]) || 0) + 1;
+    encuesta.total += 1;
   }
 
   // Las nueve canciones se leen del propio formulario: el HTML sigue siendo la
@@ -926,9 +937,11 @@
     var caja = document.querySelector('[data-encuesta-resultados]');
     var pie = document.querySelector('[data-encuesta-pie]');
     var votar = document.querySelector('[data-action="encuesta-votar"]');
+    var demo = document.querySelector('[data-encuesta-demo]');
     if (!caja) return;
 
     caja.textContent = '';
+    if (demo) demo.hidden = !encuesta.simulado;
 
     // El botón de votar sólo aparece si a quien mira le queda voto por echar.
     if (votar) votar.hidden = !!encuesta.voto;
@@ -980,8 +993,9 @@
 
     caja.appendChild(ul);
     if (pie) {
-      pie.textContent = (total === 1 ? '1 voto contado' : total + ' votos contados') +
-        (encuesta.voto ? ' · ya has votado' : '');
+      pie.textContent = (total === 1 ? '1 voto contado' : total.toLocaleString('es-CL') + ' votos contados') +
+        (encuesta.voto ? ' · ya has votado' : '') +
+        (encuesta.simulado ? ' · recuento de muestra hasta conectar el contador real' : '');
     }
   }
 
@@ -991,7 +1005,9 @@
     var n = document.querySelector('[data-encuesta-contador]');
     if (!n) return;
     var total = encuesta.compartido ? (encuesta.total || 0) : 0;
-    n.textContent = total ? (total === 1 ? 'Ya ha votado 1 persona · ' : 'Ya han votado ' + total + ' personas · ') : '';
+    n.textContent = total
+      ? (total === 1 ? 'Ya ha votado 1 persona · ' : 'Ya han votado ' + total.toLocaleString('es-CL') + ' personas · ')
+      : '';
   }
 
   // Al entrar se pregunta el recuento: quien ya votó ve los números al día y
@@ -1011,6 +1027,7 @@
       })
       .then(function (data) {
         aplicaRecuento(data);
+        sumaVotoPropio();
         actualizaContador();
         pintaResultados();
       })

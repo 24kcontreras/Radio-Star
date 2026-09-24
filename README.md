@@ -271,10 +271,37 @@ las publica Upstash cuando se contrata por fuera de la integración de Vercel.
 Para comprobar que quedó bien, basta abrir `/api/encuesta` en el navegador: si
 responde `almacen: true`, está contando.
 
-Mientras no estén puestas la función responde `almacen: false` —no falla— y la
-página guarda el voto en el navegador de quien vota y lo dice con todas las
-letras, en lugar de enseñar porcentajes inventados. En cuanto se añaden las
-variables y se redespliega, los resultados salen solos: no hay que tocar código.
+#### Recuento simulado mientras no haya almacén
+
+Sin las variables puestas, la función **no falla ni deja la encuesta vacía**:
+devuelve un recuento simulado (`simulado: true`) para que se vea viva en
+demostraciones. La página lo marca con una etiqueta «Demostración» y el pie
+avisa de que es un recuento de muestra.
+
+La simulación vive en `api/encuesta.js` (`SIMULACION`, `SIMULACION_INICIO`,
+`SIMULACION_CURVA`) y sigue dos reglas para que no cante:
+
+- **Determinista**: sale del reloj, no del azar. Todo el mundo ve los mismos
+  números y no cambian al recargar.
+- **Monótona y con freno**: crece con `horas^0,65`, así que sube deprisa al
+  principio y se va apagando, como una encuesta de verdad. Ningún contador baja
+  nunca. Arranca en 307 votos y al año va por unos 2.300, no por decenas de
+  miles. Los ritmos por canción no son proporcionales a su base a propósito:
+  si lo fueran los porcentajes quedarían clavados, y así la lista se mueve
+  («Barbra Streisand» adelanta a «Stereo Love» sobre el sexto día).
+
+El voto propio se suma en el navegador sobre esos números, para que quien vota
+se vea reflejado; se guarda en `localStorage`, no en ningún servidor.
+
+**En cuanto se añaden las variables y se redespliega, la simulación se apaga
+sola**: la respuesta pasa a `almacen: true`, desaparece la etiqueta de
+demostración y entran los votos reales. No hay que tocar código. Aviso menor:
+por el `stale-while-revalidate` la primera visita tras el cambio puede ver los
+números viejos hasta un minuto.
+
+Para quitar la simulación y volver al mensaje honesto de «tu voto se guardó en
+este navegador», basta borrar el bloque `SIMULACION` y devolver `total: 0` y
+`resultados: {}` en la rama `if (!hayAlmacen)`.
 
 Sobre la cuota: el GET del recuento se cachea 15 s en el CDN de Vercel, así que
 Redis recibe unas pocas consultas por minuto por mucha gente que entre, y el
