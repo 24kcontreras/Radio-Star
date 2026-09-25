@@ -887,8 +887,16 @@
     rankingBox.classList.toggle('is-compacta', !!encuesta.compacta);
   }
 
+  // El ranking ocupa una sección entera con su propio titular: al cerrarlo se
+  // esconde la sección, no sólo la banda, para no dejar el título colgando.
+  function cajaRanking() {
+    if (!rankingBox) return null;
+    return rankingBox.closest('section') || rankingBox;
+  }
+
   function cierraRanking() {
-    if (rankingBox) rankingBox.hidden = true;
+    var caja = cajaRanking();
+    if (caja) caja.hidden = true;
     storeSet(CERRADO_KEY, RANKING_VERSION);
   }
 
@@ -1101,7 +1109,8 @@
 
     // Cerrada en una visita anterior, y sigue siendo el mismo ranking.
     if (storeGet(CERRADO_KEY, null) === RANKING_VERSION) {
-      if (rankingBox) rankingBox.hidden = true;
+      var caja = cajaRanking();
+      if (caja) caja.hidden = true;
       return;
     }
 
@@ -1641,9 +1650,19 @@
   }
 
   /* ── Carga del Top 40 ──────────────────────────────────────────────────── */
-  // La lista la calcula /api/top40 a partir del historial de emisión de la
-  // estación: son las canciones que más ha puesto al aire en los últimos
-  // siete días. Si la petición falla no se inventa nada, se dice.
+  /* La lista la calcula /api/top40 a partir del historial de emisión de la
+     estación: son las canciones que más ha puesto al aire en los últimos
+     siete días. Si la petición falla no se inventa nada, se dice.
+
+     Ojo: la tabla del Top 40 ya no está en la página —la sustituyó la sección
+     del ranking en vídeo—, pero esta petición sigue haciéndose a propósito.
+     De aquí sale `NOMBRES`, el diccionario que limpia las etiquetas de lo que
+     suena ahora: sin él, la ficha de «suena ahora» volvería a enseñar los
+     nombres crudos de los archivos de la emisora. `renderChart()` no pinta
+     nada si no encuentra la tabla, así que no estorba.
+
+     Para recuperar la lista basta devolver el <table data-chart> al HTML: el
+     código que la pinta sigue intacto. */
   var FECHA_CHART = { day: 'numeric', month: 'short', year: 'numeric' };
 
   function cargaChart() {

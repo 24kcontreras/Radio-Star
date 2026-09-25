@@ -369,20 +369,18 @@ figure { margin: 0; }
 /* ── Ranking en vídeo + encuesta ────────────────────────────────────────── */
 /* Banda que abre el hero: el vídeo vertical a la izquierda y, a la derecha,
    el panel que va cambiando (invitación → encuesta → resultados). */
+/* Vive dentro de .section > .wrap, que ya pone el ancho máximo, el gutter y el
+   borde inferior: aquí sólo la rejilla. */
 .ranking-hero {
   position: relative;
-  max-width: var(--wrap); margin: 0 auto;
-  padding: clamp(20px, 2.6vw, 34px) var(--gutter);
-  border-bottom: 2px solid var(--color-divider);
-  display: grid; grid-template-columns: minmax(0, 248px) minmax(0, 1fr);
+  display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
   gap: clamp(18px, 2.6vw, 34px); align-items: start;
 }
 
-/* Tras votar la banda se recoge: fuera el vídeo, sólo el resultado y en una
-   franja baja, para que no siga ocupando media portada a quien ya participó. */
+/* Tras votar se recoge: fuera el vídeo y sólo el resultado, para no seguir
+   ocupando una sección entera a quien ya participó. */
 .ranking-hero.is-compacta {
   grid-template-columns: minmax(0, 1fr);
-  padding-block: clamp(14px, 1.6vw, 20px);
 }
 .ranking-hero.is-compacta .ranking-video { display: none; }
 .ranking-hero.is-compacta .ranking-title { font-size: clamp(19px, 2vw, 24px); }
@@ -693,6 +691,9 @@ figure { margin: 0; }
 .host-media { position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--color-neutral-300); }
 .host-media img { width: 100%; height: 100%; object-fit: cover; }
 .host h3 { font-size: 20px; margin: 0 0 4px; letter-spacing: -.02em; }
+/* Manda el nombre con el que se les conoce al aire —«Tatán», «Dj. Arturo Mix»—
+   y debajo va el civil, en pequeño. Al revés no: nadie los busca por el carné. */
+.host-nombre { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-neutral-700); margin-bottom: 4px; }
 .host-show { font-size: 13px; color: var(--color-accent-700); font-family: var(--font-heading); font-weight: 600; }
 .host-time { font-size: 12px; color: var(--color-neutral-700); margin-top: 2px; }
 

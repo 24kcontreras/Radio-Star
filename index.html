@@ -18,7 +18,7 @@
      que se lea a 16 px, y reducido de 148 KB a 6 KB. El original no se toca. -->
 <link rel="icon" type="image/png" href="assets/img/favicon.png">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/styles.css?v=12">
+<link rel="stylesheet" href="assets/css/styles.css?v=15">
 </head>
 <body>
 
@@ -64,7 +64,7 @@
     </a>
 
     <nav class="nav-main" aria-label="Principal">
-      <a href="#top40">Top 40</a>
+      <a href="#ranking">Ranking</a>
       <a href="#programas">Programas</a>
       <a href="#locutores">Locutores</a>
       <a href="#noticias">Noticias</a>
@@ -82,7 +82,7 @@
 
   <nav class="nav-mobile" aria-label="Secciones">
     <a href="#directo" class="is-active">Directo</a>
-    <a href="#top40">Top 40</a>
+    <a href="#ranking">Ranking</a>
     <a href="#programas">Programas</a>
     <a href="#locutores">Locutores</a>
     <a href="#noticias">Noticias</a>
@@ -94,143 +94,6 @@
 
 <!-- ═══ Directo ════════════════════════════════════════════════════════════ -->
 <section id="directo" class="section" aria-labelledby="directo-title">
-
-  <!-- ═══ Ranking en vídeo + encuesta ══════════════════════════════════════
-       El vídeo pesa 12 MB: con preload="none" y poster no se descarga hasta
-       que alguien le da al play. Al terminar se abre la encuesta. Las nueve
-       canciones están escritas aquí, en el HTML, para que se indexen y para
-       que la encuesta siga teniendo sentido sin JavaScript. -->
-  <div class="ranking-hero" data-ranking>
-    <button type="button" class="ranking-cerrar" data-action="ranking-cerrar"
-            aria-label="Cerrar el ranking">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="square" aria-hidden="true">
-        <path d="M5 5l14 14M19 5L5 19"></path>
-      </svg>
-    </button>
-
-    <figure class="ranking-video">
-      <video class="ranking-media" data-ranking-video playsinline preload="none"
-             poster="assets/img/top-poster.jpg" width="576" height="768">
-        <source src="assets/img/top.mp4" type="video/mp4">
-        Tu navegador no puede reproducir este vídeo.
-      </video>
-      <button type="button" class="ranking-play" data-action="ranking-play"
-              aria-label="Reproducir el ranking en vídeo">
-        <span class="tri" aria-hidden="true"></span>
-      </button>
-      <div class="video-tags">
-        <span class="t-live">RANKING NON STOP</span>
-        <span class="t-cam">9 TEMAS</span>
-      </div>
-    </figure>
-
-    <div class="ranking-side">
-
-      <!-- Antes de votar: la invitación. -->
-      <div data-encuesta-panel="intro">
-        <div class="kicker">Ranking non stop</div>
-        <h2 class="ranking-title">VOTA EL MEJOR TEMA</h2>
-        <p class="ranking-lead">Dale al play, mira los nueve temazos del ranking y al terminar
-          dinos cuál es el mejor. Tu voto se suma al de toda la comunidad.</p>
-        <div class="ranking-cta">
-          <button type="button" class="btn btn-primary btn-start" data-action="ranking-play">
-            <span class="tri" aria-hidden="true"></span>
-            Ver el ranking
-          </button>
-          <button type="button" class="btn btn-secondary btn-start" data-action="encuesta-abrir">
-            Votar ya
-          </button>
-        </div>
-        <p class="ranking-nota"><span data-encuesta-contador></span>72 segundos · 9 canciones</p>
-      </div>
-
-      <!-- La encuesta. Se abre sola al acabar el vídeo. -->
-      <form data-encuesta-panel="voto" data-encuesta-form hidden>
-        <div class="kicker">La encuesta</div>
-        <h2 class="ranking-title" id="encuesta-title" tabindex="-1">¿CUÁL ES EL MEJOR?</h2>
-        <fieldset class="encuesta-campo">
-          <legend class="sr-only">Elige la mejor canción del ranking</legend>
-          <ol class="encuesta-lista">
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="right-said-fred-im-too-sexy">
-              <span class="encuesta-num">1</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">I'm Too Sexy</span><span class="encuesta-artista">Right Said Fred</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="lighthouse-family-raincloud">
-              <span class="encuesta-num">2</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Raincloud</span><span class="encuesta-artista">Lighthouse Family</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="masterboy-dancing-forever">
-              <span class="encuesta-num">3</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Dancing Forever</span><span class="encuesta-artista">Masterboy</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="duck-sauce-barbra-streisand">
-              <span class="encuesta-num">4</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Barbra Streisand</span><span class="encuesta-artista">Duck Sauce</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="edward-maya-stereo-love">
-              <span class="encuesta-num">5</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Stereo Love</span><span class="encuesta-artista">Edward Maya &amp; Vika Jigulina</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="bob-sinclar-world-hold-on">
-              <span class="encuesta-num">6</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">World Hold On</span><span class="encuesta-artista">Bob Sinclar</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="billy-more-up-and-down">
-              <span class="encuesta-num">7</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Up &amp; Down</span><span class="encuesta-artista">Billy More</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="junior-jack-my-feeling">
-              <span class="encuesta-num">8</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">My Feeling</span><span class="encuesta-artista">Junior Jack</span></span>
-            </label></li>
-            <li><label class="encuesta-opt">
-              <input type="radio" name="rs-encuesta" value="paul-johnson-get-get-down">
-              <span class="encuesta-num">9</span>
-              <span class="encuesta-txt"><span class="encuesta-cancion">Get Get Down</span><span class="encuesta-artista">Paul Johnson</span></span>
-            </label></li>
-          </ol>
-        </fieldset>
-        <div class="ranking-cta">
-          <button type="submit" class="btn btn-primary btn-start" data-encuesta-enviar disabled>Votar</button>
-          <button type="button" class="btn btn-ghost btn-start" data-action="encuesta-resultados">
-            Ver resultados
-          </button>
-          <span class="ranking-nota" data-encuesta-aviso role="status">Elige una canción para votar.</span>
-        </div>
-      </form>
-
-      <!-- El recuento. Se llega aquí al votar, y también sin votar desde
-           «Ver resultados»: la lista se enseña a todo el mundo. -->
-      <div data-encuesta-panel="resultado" hidden>
-        <div class="kicker">Resultados</div>
-        <h2 class="ranking-title" id="resultado-title" tabindex="-1">ASÍ VA LA VOTACIÓN</h2>
-        <!-- Sólo mientras el recuento sea simulado; en cuanto haya almacén
-             conectado, el JS lo esconde. -->
-        <p class="ranking-demo" data-encuesta-demo hidden>
-          <span class="tag tag-neutral">Demostración</span>
-        </p>
-        <div data-encuesta-resultados></div>
-        <p class="ranking-nota" data-encuesta-pie></p>
-        <div class="ranking-cta">
-          <button type="button" class="btn btn-primary btn-start" data-action="encuesta-votar" hidden>
-            Votar
-          </button>
-          <!-- El texto lo pone el JS: alterna entre el resumen y los 9 temas. -->
-          <button type="button" class="btn btn-ghost btn-start" data-action="encuesta-detalle"></button>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
   <div class="live-grid">
 
@@ -363,7 +226,6 @@
             <div class="t" data-bind="track-title">Conectando con la emisora…</div>
             <div class="a"><span data-bind="track-artist"></span><span data-sep="album" hidden> · </span><span data-bind="track-album"></span></div>
           </div>
-          <span class="tag tag-accent" hidden>Nº <span data-bind="track-pos">—</span> del Top 40</span>
         </div>
       </div>
 
@@ -376,33 +238,150 @@
   </div>
 </section>
 
-<!-- ═══ Top 40 ═════════════════════════════════════════════════════════════ -->
-<section id="top40" class="section" aria-labelledby="top40-title">
+<!-- ═══ Ranking non stop ══════════════════════════════════════════════════
+     Sustituye a la antigua lista Top 40. El vídeo pesa 12 MB: con
+     preload="none" y poster no se descarga hasta que alguien le da al play.
+     Al terminar se abre la encuesta. Las nueve canciones están escritas aquí,
+     en el HTML, para que se indexen y para que la encuesta siga teniendo
+     sentido sin JavaScript. -->
+<section id="ranking" class="section" aria-labelledby="ranking-title">
   <div class="wrap">
     <div class="section-head">
       <div class="section-head-text">
-        <div class="kicker">La lista</div>
-        <h2 id="top40-title" class="section-title">TOP 40 RADIOSTAR</h2>
+        <div class="kicker">La lista en vídeo</div>
+        <h2 id="ranking-title" class="section-title">RANKING NON STOP</h2>
       </div>
-      <span class="tag tag-neutral">Emisiones de los últimos 7 días · <span data-bind="chart-date">—</span></span>
-      <button type="button" class="btn btn-secondary btn-start" data-action="toggle-full">Ver los 40 completos</button>
     </div>
+    <div class="ranking-hero" data-ranking>
+      <button type="button" class="ranking-cerrar" data-action="ranking-cerrar"
+              aria-label="Cerrar el ranking">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="square" aria-hidden="true">
+          <path d="M5 5l14 14M19 5L5 19"></path>
+        </svg>
+      </button>
 
-    <div class="chart-scroll">
-      <table class="table chart-table">
-        <thead>
-          <tr>
-            <th style="width:54px">Pos</th>
-            <th>Canción</th>
-            <th class="col-prev" style="width:90px">Ant.</th>
-            <th class="col-weeks" style="width:96px">Semanas</th>
-            <th style="width:64px"><span class="sr-only">Reproducir</span></th>
-          </tr>
-        </thead>
-        <tbody data-chart aria-busy="true"></tbody>
-      </table>
+      <figure class="ranking-video">
+        <video class="ranking-media" data-ranking-video playsinline preload="none"
+               poster="assets/img/top-poster.jpg" width="576" height="768">
+          <source src="assets/img/top.mp4" type="video/mp4">
+          Tu navegador no puede reproducir este vídeo.
+        </video>
+        <button type="button" class="ranking-play" data-action="ranking-play"
+                aria-label="Reproducir el ranking en vídeo">
+          <span class="tri" aria-hidden="true"></span>
+        </button>
+        <div class="video-tags">
+          <span class="t-live">RANKING NON STOP</span>
+          <span class="t-cam">9 TEMAS</span>
+        </div>
+      </figure>
+
+      <div class="ranking-side">
+
+        <!-- Antes de votar: la invitación. -->
+        <div data-encuesta-panel="intro">
+          <h2 class="ranking-title">VOTA EL MEJOR TEMA</h2>
+          <p class="ranking-lead">Dale al play, mira los nueve temazos del ranking y al terminar
+            dinos cuál es el mejor. Tu voto se suma al de toda la comunidad.</p>
+          <div class="ranking-cta">
+            <button type="button" class="btn btn-primary btn-start" data-action="ranking-play">
+              <span class="tri" aria-hidden="true"></span>
+              Ver el ranking
+            </button>
+            <button type="button" class="btn btn-secondary btn-start" data-action="encuesta-abrir">
+              Votar ya
+            </button>
+          </div>
+          <p class="ranking-nota"><span data-encuesta-contador></span>72 segundos · 9 canciones</p>
+        </div>
+
+        <!-- La encuesta. Se abre sola al acabar el vídeo. -->
+        <form data-encuesta-panel="voto" data-encuesta-form hidden>
+          <div class="kicker">La encuesta</div>
+          <h2 class="ranking-title" id="encuesta-title" tabindex="-1">¿CUÁL ES EL MEJOR?</h2>
+          <fieldset class="encuesta-campo">
+            <legend class="sr-only">Elige la mejor canción del ranking</legend>
+            <ol class="encuesta-lista">
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="right-said-fred-im-too-sexy">
+                <span class="encuesta-num">1</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">I'm Too Sexy</span><span class="encuesta-artista">Right Said Fred</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="lighthouse-family-raincloud">
+                <span class="encuesta-num">2</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Raincloud</span><span class="encuesta-artista">Lighthouse Family</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="masterboy-dancing-forever">
+                <span class="encuesta-num">3</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Dancing Forever</span><span class="encuesta-artista">Masterboy</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="duck-sauce-barbra-streisand">
+                <span class="encuesta-num">4</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Barbra Streisand</span><span class="encuesta-artista">Duck Sauce</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="edward-maya-stereo-love">
+                <span class="encuesta-num">5</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Stereo Love</span><span class="encuesta-artista">Edward Maya &amp; Vika Jigulina</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="bob-sinclar-world-hold-on">
+                <span class="encuesta-num">6</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">World Hold On</span><span class="encuesta-artista">Bob Sinclar</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="billy-more-up-and-down">
+                <span class="encuesta-num">7</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Up &amp; Down</span><span class="encuesta-artista">Billy More</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="junior-jack-my-feeling">
+                <span class="encuesta-num">8</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">My Feeling</span><span class="encuesta-artista">Junior Jack</span></span>
+              </label></li>
+              <li><label class="encuesta-opt">
+                <input type="radio" name="rs-encuesta" value="paul-johnson-get-get-down">
+                <span class="encuesta-num">9</span>
+                <span class="encuesta-txt"><span class="encuesta-cancion">Get Get Down</span><span class="encuesta-artista">Paul Johnson</span></span>
+              </label></li>
+            </ol>
+          </fieldset>
+          <div class="ranking-cta">
+            <button type="submit" class="btn btn-primary btn-start" data-encuesta-enviar disabled>Votar</button>
+            <button type="button" class="btn btn-ghost btn-start" data-action="encuesta-resultados">
+              Ver resultados
+            </button>
+            <span class="ranking-nota" data-encuesta-aviso role="status">Elige una canción para votar.</span>
+          </div>
+        </form>
+
+        <!-- El recuento. Se llega aquí al votar, y también sin votar desde
+             «Ver resultados»: la lista se enseña a todo el mundo. -->
+        <div data-encuesta-panel="resultado" hidden>
+          <div class="kicker">Resultados</div>
+          <h2 class="ranking-title" id="resultado-title" tabindex="-1">ASÍ VA LA VOTACIÓN</h2>
+          <!-- Sólo mientras el recuento sea simulado; en cuanto haya almacén
+               conectado, el JS lo esconde. -->
+          <p class="ranking-demo" data-encuesta-demo hidden>
+            <span class="tag tag-neutral">Demostración</span>
+          </p>
+          <div data-encuesta-resultados></div>
+          <p class="ranking-nota" data-encuesta-pie></p>
+          <div class="ranking-cta">
+            <button type="button" class="btn btn-primary btn-start" data-action="encuesta-votar" hidden>
+              Votar
+            </button>
+            <!-- El texto lo pone el JS: alterna entre el resumen y los 9 temas. -->
+            <button type="button" class="btn btn-ghost btn-start" data-action="encuesta-detalle"></button>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <p class="chart-note">Se ordena por número de emisiones reales en antena. «Ant.» es el puesto de hace siete días.</p>
   </div>
 </section>
 
@@ -499,8 +478,20 @@
         </div>
         <div>
           <h3>Tatán</h3>
+          <div class="host-nombre">Cristian Iturrieta</div>
           <div class="host-show">Partiendo la semana</div>
           <div class="host-time">L–V · 07:00 – 09:10</div>
+        </div>
+      </div>
+      <div class="host">
+        <div class="host-media grayscale">
+          <img src="assets/img/locutor-arturo.webp" alt="Retrato de Arturo Moya" width="900" height="1200" loading="lazy" decoding="async">
+        </div>
+        <div>
+          <h3>Dj. Arturo Mix</h3>
+          <div class="host-nombre">Arturo Moya</div>
+          <div class="host-show">ON THE MIX</div>
+          <div class="host-time">Viernes · 22:00 – 00:00</div>
         </div>
       </div>
       <div class="host">
@@ -699,7 +690,7 @@
   </div>
 </div>
 
-<script src="assets/js/app.js?v=18"></script>
+<script src="assets/js/app.js?v=19"></script>
 <script src="assets/js/noticias.js?v=1" defer></script>
 </body>
 </html>

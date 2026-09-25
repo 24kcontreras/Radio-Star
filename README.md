@@ -27,8 +27,8 @@ Las mismas de la maqueta y en el mismo orden:
 2. **`#directo`** — emisión en directo: reloj, canción actual, play/pausa,
    ecualizador, volumen, me gusta, compartir, historial, y panel de señal con
    conmutador audio / vídeo y estadísticas.
-3. **`#top40`** — lista con posición, movimiento respecto a la semana anterior y
-   semanas en lista. Cada fila lleva la canción al reproductor.
+3. **`#ranking`** — el ranking en vídeo y la encuesta. Sustituyó a la antigua
+   lista Top 40 (ver §4).
 4. **`#programas`** — tarjetas de programas y podcasts, filtrables por Todo / Directo / Podcast.
 5. **`#locutores`** — rejilla del equipo.
 6. **`#noticias`** — actualidad musical.
@@ -99,7 +99,20 @@ reemplaza por una imagen real:
 El CSS ya contempla la `<img>` dentro (`object-fit: cover`), así que no hay que tocar estilos.
 El filtro en blanco y negro es la clase `grayscale`: quítala si prefieres las fotos en color.
 
-### 4. El Top 40 — hecho, pero necesita una clave
+### 4. El Top 40 — retirado de la página, pero sigue vivo por dentro
+
+> **La tabla del Top 40 ya no se enseña.** En su sitio va ahora la sección
+> `#ranking` (el vídeo y la encuesta, §7). Lo que sigue describe la maquinaria,
+> que **no se ha borrado** y se sigue usando para otra cosa.
+
+La petición a `/api/top40` se mantiene a propósito: de ahí sale `NOMBRES`, el
+diccionario que limpia las etiquetas de los archivos para la ficha de «suena
+ahora». Sin él, el reproductor volvería a enseñar los nombres crudos de la
+emisora. `renderChart()` no pinta nada si no encuentra la tabla, así que no
+estorba.
+
+**Para recuperar la lista** basta con devolver el `<table>` con `data-chart` al
+HTML: el código que la calcula y la pinta sigue intacto.
 
 Ya no hay lista de ejemplo. El Top 40 son las canciones que la emisora **más ha
 puesto al aire en los últimos 7 días**, contadas sobre su historial real de
@@ -229,9 +242,10 @@ figura en el Top 40, se reutiliza el nombre ya limpio que devolvió
 `/api/top40` —así la ficha y la lista no se contradicen— y la fila
 correspondiente se marca en rojo.
 
-### 7. La encuesta del ranking en vídeo
+### 7. El ranking en vídeo y la encuesta
 
-El vídeo `assets/img/top.mp4` abre el hero. Al terminar se despliega sola la
+Ocupa la sección `#ranking`, donde antes estaba la tabla del Top 40.
+El vídeo `assets/img/top.mp4` se reproduce ahí. Al terminar se despliega sola la
 encuesta: cuál de las nueve canciones del ranking es la mejor. También se puede
 abrir sin esperar, con el botón «Votar ya».
 

@@ -31,12 +31,14 @@ Variables que se leen: `KV_REST_API_URL` y `KV_REST_API_TOKEN` (también valen
 
 ### 1.2 Verificar que `AZURACAST_API_KEY` está puesta en Vercel
 
-El Top 40 se calcula del historial real de emisión, pero la función necesita esa
-clave. Sin ella responde 503 y la sección enseña un aviso en vez de la lista.
+La tabla del Top 40 ya no se enseña (la sustituyó la sección del ranking), pero
+la clave **sigue haciendo falta**: de `/api/top40` sale el diccionario que limpia
+los nombres de las canciones en «suena ahora». Sin ella, el reproductor enseña
+las etiquetas crudas de los archivos.
 
 - [ ] Comprobar en Vercel → Settings → Environment Variables.
 - [ ] Si falta: AzuraCast → *Mi cuenta → Claves de API → Añadir*.
-- [ ] Comprobar: abrir `tudominio.com/api/top40` y ver que devuelve `top`.
+- [ ] Comprobar: abrir `tudominio.com/api/top40` y ver que devuelve `nombres`.
 
 ### 1.3 Publicar lo que está sin commitear
 
@@ -46,9 +48,15 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - [ ] `assets/img/top.mp4` — el vídeo del ranking, 12 MB (sin rastrear).
 - [ ] `assets/img/top-poster.jpg` — portada del vídeo (sin rastrear).
 - [ ] `assets/img/estudio.webp` — carátula del directo (sin rastrear).
+- [ ] `assets/img/locutor-arturo.webp` — retrato de Arturo Moya (sin rastrear).
 - [ ] `assets/img/entrada.mp4` + `entrada-poster.jpg` — cortinilla de bienvenida.
       Es copia de `video entrada.mp4` con nombre sin espacios; el original se
       puede dejar fuera del repo igual que `portada estudio.jpg`.
+- [ ] **Originales pesados sueltos en `assets/img/`** que no usa la web:
+      `portada estudio.jpg` (2,2 MB), `video entrada.mp4` y
+      `Gemini_Generated_Image_wglofuwglofuwglo.jpg` (2,5 MB, el original del
+      retrato de Arturo). De cada uno ya existe la versión optimizada que sí se
+      usa. Yo los sacaría del repo o los movería a una carpeta de originales.
 - [ ] Decidir si se commitea también `assets/img/portada estudio.jpg`, el
       original de 2,2 MB. Tiene un espacio en el nombre y un marco de maqueta
       alrededor; `estudio.webp` ya sale de él recortado y optimizado. Yo lo
@@ -63,6 +71,10 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
       `<div class="show-media grayscale" role="img" aria-label="…">` por un
       `<div class="show-media grayscale"><img src="…" alt="…"></div>`.
       El CSS ya está listo, no hay que tocar estilos.
+- [ ] **Ficha de «ON THE MIX» en la sección Programas** — acordado que va, falta
+      el texto. Para la tarjeta necesito tres cosas: descripción (1-2 frases),
+      duración aproximada y si es en directo o podcast. En cuanto me las pases,
+      la añado.
 - [ ] **2 locutores sin nombre ni foto** — «Los Bailables» y «Chao chao»
       aparecen como *Por confirmar*.
 - [ ] **5 logos de patrocinadores** — ahora ponen literalmente «Logo».
@@ -163,5 +175,7 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - La radio se calla mientras suena el vídeo y vuelve sola al acabar.
 - Votación simulada mientras no haya contador real, marcada como demostración.
 - Cortinilla de bienvenida al entrar, una vez por visita y con botón de saltar.
+- Arturo Moya «Dj. Arturo Mix» («ON THE MIX») añadido a Locutores, con foto.
+- El ranking y la encuesta sustituyen a la tabla del Top 40, en su propia sección.
 - Tras votar la banda se recoge (solo el podio + tu voto) y se puede cerrar con
   la X; el cierre se recuerda por versión de ranking.
