@@ -80,6 +80,40 @@ Sustitúyelo por el reproductor real, por ejemplo:
 
 Para HLS (`.m3u8`) hará falta hls.js en los navegadores que no lo soportan de forma nativa.
 
+### 2 bis. Imágenes derivadas: si cambias el original, hay que regenerarlas
+
+**Esto ya ha mordido una vez.** Varias imágenes y vídeos de la web no se sirven
+tal cual: son versiones recortadas y optimizadas del archivo que mandó la
+emisora. Cambiar el original **no actualiza la web**; hay que regenerar el
+derivado, subir el `?v=` si lo lleva, y volver a desplegar.
+
+| Se sirve | Sale de | Qué se le hace |
+| --- | --- | --- |
+| `estudio.webp` | `portada estudio.jpg` | quitar el marco de maqueta, 800×800 |
+| `locutor-arturo.webp` | el retrato original | recorte 3:4, 900×1200 |
+| `top-poster.jpg` | `top.mp4` | fotograma del segundo 3 |
+| `entrada.mp4` + `entrada-poster.jpg` | `video entrada.mp4` | copia sin espacios + fotograma |
+
+Los originales llegan con un marco gris de presentación alrededor (la imagen
+cuadrada va dentro, con sombra). Hay que recortarlo o la carátula sale con
+bordes. Las medidas del recorte **cambian con cada archivo**: conviene medirlas
+en lugar de reutilizar las de la vez anterior.
+
+Comandos de referencia (con ffmpeg):
+
+```sh
+# carátula del estudio: recortar el marco y optimizar
+ffmpeg -i "assets/img/portada estudio.jpg" \
+  -vf "crop=1648:1648:220:208,scale=800:800" -quality 84 assets/img/estudio.webp
+
+# póster del vídeo del ranking
+ffmpeg -ss 3 -i assets/img/top.mp4 -frames:v 1 -q:v 4 assets/img/top-poster.jpg
+```
+
+Después de regenerar `estudio.webp`, **sube el `?v=` de `ARTE_ESTUDIO`** en
+`assets/js/app.js`: sin eso, quien ya tenga la imagen guardada seguirá viendo
+la antigua aunque el despliegue sea correcto.
+
 ### 3. Las imágenes que faltan
 
 Los bloques de programas, locutores, noticias y patrocinadores llevan

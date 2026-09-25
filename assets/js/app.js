@@ -20,10 +20,17 @@
   // Lo que se anuncia mientras hay alguien al aire y el emisor no manda título.
   var EN_DIRECTO = 'Transmitiendo desde nuestro estudio';
 
-  // Carátula para cuando emite el estudio y no la rotación del servidor. Los
-  // directos no traen imagen propia, y dejar el hueco gris parecía una avería.
-  // Es una pieza de marca, no una foto: se enseña en color (ver `no-filtro`).
-  var ARTE_ESTUDIO = 'assets/img/estudio.webp';
+  /* Carátula para cuando emite el estudio y no la rotación del servidor. Los
+     directos no traen imagen propia, y dejar el hueco gris parecía una avería.
+     Es una pieza de marca, no una foto: se enseña en color (ver `no-filtro`).
+
+     El ?v= es un contador de versión, como el de la hoja de estilos: al
+     cambiar la imagen hay que subirlo, o los navegadores que ya la tengan
+     guardada seguirán enseñando la anterior después del despliegue.
+
+     La imagen sale de `portada estudio.jpg` recortada y optimizada; cambiar
+     sólo ese original no actualiza nada (ver README, §2 bis). */
+  var ARTE_ESTUDIO = 'assets/img/estudio.webp?v=2';
 
   var VOL_STEPS = 10;
 

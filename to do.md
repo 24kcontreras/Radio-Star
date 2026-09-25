@@ -152,9 +152,6 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - [ ] **¿Una vez por visita o con menos frecuencia?** Ahora sale una vez por
       sesión. Si resulta pesada, se puede pasar a una vez al día cambiando
       `sessionStorage` por `localStorage` con fecha.
-- [ ] **Texto de la carátula del estudio.** `estudio.webp` dice «MÚSICA DE LOS
-      80s». Si el directo no siempre es de los 80, conviene una versión más
-      neutra, porque esa imagen sale en **cualquier** emisión desde el estudio.
 
 ---
 
@@ -177,5 +174,7 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - Cortinilla de bienvenida al entrar, una vez por visita y con botón de saltar.
 - Arturo Moya «Dj. Arturo Mix» («ON THE MIX») añadido a Locutores, con foto.
 - El ranking y la encuesta sustituyen a la tabla del Top 40, en su propia sección.
+- Carátula del estudio actualizada al arte nuevo («Disco & Dance»), regenerada
+  desde el original y con ?v= subido.
 - Tras votar la banda se recoge (solo el podio + tu voto) y se puede cerrar con
   la X; el cierre se recuerda por versión de ranking.
