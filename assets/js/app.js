@@ -29,7 +29,7 @@
      guardada seguirán enseñando la anterior después del despliegue.
 
      La imagen sale de `portada estudio.jpg` recortada y optimizada; cambiar
-     sólo ese original no actualiza nada (ver README, §2 bis). */
+     sólo ese original no actualiza nada (ver docs/OPERACION.md, §2 bis). */
   var ARTE_ESTUDIO = 'assets/img/estudio.webp?v=2';
 
   var VOL_STEPS = 10;

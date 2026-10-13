@@ -9,3 +9,7 @@ scripts/.cache-busquedas.json
 
 .vercel/
 node_modules/
+
+# Archivos fuente sin optimizar (maqueta, vídeos e imágenes originales).
+# La web sólo usa sus derivados en assets/img/ (ver docs/OPERACION.md §2 bis).
+originales/

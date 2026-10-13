@@ -40,27 +40,12 @@ las etiquetas crudas de los archivos.
 - [ ] Si falta: AzuraCast → *Mi cuenta → Claves de API → Añadir*.
 - [ ] Comprobar: abrir `tudominio.com/api/top40` y ver que devuelve `nombres`.
 
-### 1.3 Publicar lo que está sin commitear
+### 1.3 ~~Publicar lo que estaba sin commitear~~ — hecho
 
-Ahora mismo hay trabajo hecho que **no está desplegado**:
-
-- [ ] `api/encuesta.js` — la función de la encuesta (sin rastrear).
-- [ ] `assets/img/top.mp4` — el vídeo del ranking, 12 MB (sin rastrear).
-- [ ] `assets/img/top-poster.jpg` — portada del vídeo (sin rastrear).
-- [ ] `assets/img/estudio.webp` — carátula del directo (sin rastrear).
-- [ ] `assets/img/locutor-arturo.webp` — retrato de Arturo Moya (sin rastrear).
-- [ ] `assets/img/entrada.mp4` + `entrada-poster.jpg` — cortinilla de bienvenida.
-      Es copia de `video entrada.mp4` con nombre sin espacios; el original se
-      puede dejar fuera del repo igual que `portada estudio.jpg`.
-- [ ] **Originales pesados sueltos en `assets/img/`** que no usa la web:
-      `portada estudio.jpg` (2,2 MB), `video entrada.mp4` y
-      `Gemini_Generated_Image_wglofuwglofuwglo.jpg` (2,5 MB, el original del
-      retrato de Arturo). De cada uno ya existe la versión optimizada que sí se
-      usa. Yo los sacaría del repo o los movería a una carpeta de originales.
-- [ ] Decidir si se commitea también `assets/img/portada estudio.jpg`, el
-      original de 2,2 MB. Tiene un espacio en el nombre y un marco de maqueta
-      alrededor; `estudio.webp` ya sale de él recortado y optimizado. Yo lo
-      dejaría fuera del repo o lo movería a una carpeta de originales.
+Todo está versionado. Los originales pesados que no usa la web (`portada estudio.jpg`,
+`video entrada.mp4`, `tatan.png`, `cover.webp`, el retrato original de Arturo y
+la maqueta `RadioStar - standalone.html`) se movieron a `originales/`, que no
+se versiona ni se despliega.
 
 ---
 
@@ -103,11 +88,8 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - [ ] **`top.mp4` pesa 12 MB** para 72 segundos a 576×768. Recomprimido
       bajaría a 2–3 MB sin pérdida visible. No bloquea (va con `preload="none"`
       y solo se descarga al darle al play), pero quien lo vea en datos lo nota.
-- [ ] **`RadioStar - standalone.html` pesa 918 KB** y se despliega a producción
-      aunque no se sirva a nadie: es la maqueta original de referencia. Se puede
-      sacar del repo o excluir del despliegue.
-- [ ] **Imágenes sin usar en `assets/img/`**: `cover.webp` y `tatan.png`
-      (2,6 MB) no se referencian desde ningún sitio. Borrarlas o usarlas.
+- [x] **`RadioStar - standalone.html`** — fuera del repo (en `originales/`).
+- [x] **Imágenes sin usar** (`cover.webp`, `tatan.png`) — fuera del repo.
 
 ---
 
@@ -116,12 +98,8 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 - [ ] **`og:image` apunta al logotipo.** Al compartir la web en WhatsApp o redes
       sale el logo suelto. Queda mejor una imagen 1200×630 pensada para eso —
       `estudio.webp` serviría de base.
-- [ ] **El README acaba con basura.** Las dos últimas líneas
-      (`#   R a d i o - S t a r`) son restos en UTF-16 de cuando se creó el repo
-      en GitHub. Por eso el archivo se detecta como binario.
-- [ ] **Falta `.env.example`.** El `.gitignore` ya lo contempla
-      (`!.env.example`) pero no existe. Ayudaría a saber qué variables hacen
-      falta sin abrir el panel de Vercel.
+- [x] **Restos UTF-16 al final del README** — limpiados.
+- [x] **`.env.example`** — añadido.
 
 ---
 
@@ -155,7 +133,7 @@ Ahora mismo hay trabajo hecho que **no está desplegado**:
 
 ---
 
-## 7. Más adelante (del README)
+## 7. Más adelante (del manual de operación)
 
 - [ ] Páginas interiores: ficha de programa, noticia completa, parrilla semanal.
 - [ ] Aviso legal, privacidad y banner de cookies si se añade analítica.
